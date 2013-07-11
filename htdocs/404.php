@@ -28,27 +28,16 @@ if (in_array($nos_url, array(
     exit();
 }
 
+
 $is_media = preg_match('`^(?:cache/)?media/`', $nos_url);
+
 if ($is_media) {
-    $is_resized = preg_match('`cache/media/(.+/(\d+)-(\d+)(?:-(\w+))?.([a-z]+))$`u', $nos_url, $m);
+    $is_resized = \Str::sub($nos_url, 0, 6) === 'cache/';
 
     if ($is_resized) {
-        list(, $path, $max_width, $max_height, $verification, $extension) = $m;
-        $media_url = str_replace("/$max_width-$max_height-$verification", '', $path);
-
-        \Config::load('crypt', true);
-        $hash = md5(\Config::get('crypt.crypto_hmac').'$/'.$media_url.'$'.$max_width.'$'.$max_height);
-
-        // Thumbnails view or slideshow app just replace '64-64' by '128-128' in the URL...
-        if (empty($verification) || substr($hash, 0, 6) !== $verification) {
-            // Still allow generated for back-office authenticated users
-            if (!\Nos\Auth::check()) {
-                header('HTTP/1.0 403 Forbidden');
-                header('HTTP/1.1 403 Forbidden');
-                exit();
-            }
-        }
-
+        $pathinfo = pathinfo($nos_url);
+        // Remove 12 characteres for cache/media/
+        $media_url = \Str::sub($pathinfo['dirname'].'.'.$pathinfo['extension'], 12);
     } else {
         $media_url = str_replace('media/', '', $nos_url);
     }
@@ -62,30 +51,38 @@ if ($is_media) {
         $media = \Nos\Media\Model_Media::forge(reset($res));
     }
 
-    if (false === $media || !is_file(APPPATH.$media->get_private_path())) {
+    if (false === $media || !is_file($media->path())) {
         $send_file = false;
     } else {
         if ($is_resized) {
-            $source = APPPATH.$media->get_private_path();
-            $target = $m[0];
-            $dest = APPPATH.$target;
-            $dir = dirname($dest);
-            if (!is_dir($dir)) {
-                if (!@mkdir($dir, 0755, true)) {
-                    error_log("Can't create dir ".$dir);
-                    exit("Can't create dir ".$dir);
-                }
-            }
+            $toolkit_image = $media->getToolkitImage();
             try {
-                \Nos\Tools_Image::resize($source, $max_width, $max_height, $dest);
-                $send_file = $dest;
+                if (!$toolkit_image->parse($nos_url) && !\Nos\Auth::check()) {
+                    throw new \Exception();
+                }
             } catch (\Exception $e) {
+                header('HTTP/1.0 403 Forbidden');
+                header('HTTP/1.1 403 Forbidden');
+                exit();
+            }
+
+            try {
+                $send_file = $toolkit_image->save();
+                $target = $toolkit_image->url();
+            } catch (\Exception $e) {
+                Log::error($e->getMessage());
                 $send_file = false;
             }
         } else {
-            $send_file = APPPATH.$media->get_private_path();
-            $target = $media->get_public_path();
+            $send_file = $media->path();
+            $target = $media->url(false);
         }
+    }
+
+    if (false !== $send_file) {
+        $send_file =  \File::validOSPath($send_file);
+
+        \Event::trigger_function('404.mediaFound', array(array('url' => $nos_url, 'media' => $media, 'send_file' => &$send_file)));
 
         $source = $send_file;
         $target = DOCROOT.$target;
@@ -93,7 +90,8 @@ if ($is_media) {
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        symlink(Nos\Tools_File::relativePath(dirname($target), $source), $target);
+
+        \File::relativeSymlink($source, $target);
         $send_file = $source;
     }
 
@@ -111,12 +109,12 @@ if ($is_media) {
 
 $is_attachment = preg_match('`^(?:cache/)?data/files/`', $nos_url);
 if ($is_attachment) {
-    $is_resized = preg_match('`cache/data/files/(.+/(\d+)-(\d+)(?:-(\w+))?.([a-z]+))$`Uu', $nos_url, $m);
+    $is_resized = \Str::sub($nos_url, 0, 6) === 'cache/';
 
     if ($is_resized) {
-        list($target_resized, $path, $max_width, $max_height, $verification, $extension) = $m;
-        $attachment_url = str_replace("/$max_width-$max_height-$verification", '', $path);
-        $attachment_url = str_replace("/$max_width-$max_height", '', $attachment_url);
+        $pathinfo = pathinfo($nos_url);
+        // Remove 12 characteres for cache/data/files/
+        $attachment_url = \Str::sub($pathinfo['dirname'].'.'.$pathinfo['extension'], 17);
     } else {
         $attachment_url = str_replace('data/files/', '', $nos_url);
     }
@@ -143,21 +141,33 @@ if ($is_attachment) {
         }
 
         if ($send_file && $is_resized) {
-            $source = $send_file;
-            $target_relative = $target_resized;
-            $send_file = APPPATH.$target_relative;
-            $dir = dirname($send_file);
+            $toolkit_image = $attachment->getToolkitImage();
             try {
-                !is_dir($dir) && \File::create_dir(APPPATH.'cache', \Str::sub($dir, \Str::length(APPPATH.'cache')));
-                \Nos\Tools_Image::resize($source, $max_width, $max_height, $send_file);
+                if (!$toolkit_image->parse($nos_url)) {
+                    throw new \Exception();
+                }
             } catch (\Exception $e) {
+                header('HTTP/1.0 403 Forbidden');
+                header('HTTP/1.1 403 Forbidden');
+                exit();
+            }
+
+            try {
+                $send_file = $toolkit_image->save();
+                $target_relative = $toolkit_image->url();
+            } catch (\Exception $e) {
+                Log::error($e->getMessage());
                 $send_file = false;
             }
         } else if ($send_file) {
             $target_relative = $attachment->url();
         }
+    }
 
-        if ($send_file && $check === false && is_file($send_file)) {
+    if (false !== $send_file) {
+        \Event::trigger_function('404.attachmentFound', array(array('url' => $nos_url, 'attachment' => $attachment, 'send_file' => &$send_file)));
+
+        if ($check === false) {
             $source = $send_file;
             $target = DOCROOT.$target_relative;
             $dir = dirname($target);
@@ -167,7 +177,7 @@ if ($is_attachment) {
                     exit("Can't create dir ".$dir);
                 }
             }
-            if (!@symlink(Nos\Tools_File::relativePath(dirname($target), $source), $target)) {
+            if (!\File::relativeSymlink($source, $target)) {
                 Log::error("Can't symlink in ".$source);
                 exit("Can't symlink in ".$source);
             }

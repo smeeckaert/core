@@ -53,7 +53,7 @@ define('jquery-nos-image-wysiwyg',
                                 img.attr('style',  $style.val());
 
                                 img.attr('data-media', JSON.stringify(media));
-                                img.attr('src', params.base_url + media.path);
+                                img.attr('src', media.path);
 
                                 $dialog.trigger('insert.media', img);
                                 e.stopPropagation();
@@ -112,6 +112,7 @@ define('jquery-nos-image-wysiwyg',
                                 } else {
                                     $alt.removeAttr('readonly').addClass('ui-state-default').removeClass('ui-state-disabled');
                                 }
+                                $title.triggerHandler('change');
                             }),
                         media = null,
                         tinymce_image_select = function(media_json, image_dom) {
@@ -142,11 +143,11 @@ define('jquery-nos-image-wysiwyg',
                                 $style.val(image_dom.attr('style'));
 
                                 if (media && (Math.round($width.val() * media.height / media.width) != $height.val())) {
-                                    $proportional.prop('checked', false).removeAttr('checked', true).change();
+                                    $proportional.prop('checked', false).change();
                                 }
 
                                 if ($title.val() != $alt.val()) {
-                                    $same_title_alt.prop('checked', false).removeAttr('checked').change();
+                                    $same_title_alt.prop('checked', false).change();
                                 }
                             },
                         ed = $dialog.data('tinymce'),

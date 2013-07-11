@@ -1,6 +1,6 @@
 <?php
 
-// Generated on 17/04/2013 14:49:11
+// Generated on 05/07/2013 14:57:58
 
 // 24 out of 24 messages are translated (100%).
 // 90 out of 90 words are translated (100%).
@@ -82,7 +82,7 @@ return array(
     #: views/admin/app_manager.view.php:190
     'Applications manager' => 'Gestion des applications',
 
-    #: views/admin/app_manager.view.php:198
+    #: views/admin/app_manager.view.php:202
     'Refresh all metadata' => 'Actualiser toutes les metadata',
 
 );

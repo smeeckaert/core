@@ -13,6 +13,9 @@ namespace Nos\User;
 class Controller_Admin_User extends \Nos\Controller_Admin_Crud
 {
     protected $is_account = false;
+
+    protected $_password_is_changed = false;
+
     public function prepare_i18n()
     {
         parent::prepare_i18n();
@@ -44,38 +47,32 @@ class Controller_Admin_User extends \Nos\Controller_Admin_Crud
         return $fields;
     }
 
-    public function save($item, $data)
+    public function before_save($item, $data)
     {
-        if (!$this->is_new) {
-            if ($item->is_changed('user_password')) {
-                $this->config['messages']['successfully saved'] = __('Done, your password has been changed.');
-            }
-        }
+        parent::before_save($item, $data);
+
+        $this->_password_is_changed = $item->is_changed('user_password');
 
         $enable_roles = \Config::get('novius-os.users.enable_roles', false);
-        if ($enable_roles && !$this->is_account) {
-            $roles = \Input::post('roles', array());
-            if (!empty($roles)) {
-                $roles = Model_Role::find('all', array(
-                    'where' => array(
-                        array('role_id', 'IN', $roles),
-                    ),
-                ));
-            }
-            // Load the roles...
-            $item->roles;
-            unset($item->roles);
-            foreach ($roles as $role) {
-                $item->roles[$role->role_id] = $role;
-            }
+        $roles = \Input::post('roles', array());
+        if ($enable_roles && !empty($roles)) {
+            $item->roles = Model_Role::find('all', array(
+                'where' => array(
+                    array('role_id', 'IN', $roles),
+                ),
+            ));
+        }
+    }
 
-            // When editing, save() is called after. When creating, save() is called before (we know the ID). So re-save it.
-            if ($this->is_new) {
-                $item->save(array('roles'));
-            }
+    public function save($item, $data)
+    {
+        if (!$this->is_new && $this->_password_is_changed) {
+            $this->config['i18n']['notification item saved'] = __('Done, your password has been changed.');
         }
 
         $return = parent::save($item, $data);
+
+        $enable_roles = \Config::get('novius-os.users.enable_roles', false);
         if ($enable_roles) {
             $return['dispatchEvent'][] = array(
                 'name' => 'Nos\Application',

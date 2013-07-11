@@ -14,6 +14,23 @@ return array(
     'model' => 'Nos\\Media\\Model_Media',
     'query' => array(
         'limit' => 10,
+        'callback' => array(
+            'permissions' => function($query) {
+                $restricted_folders = \Nos\Media\Permission::getRestrictedFolders();
+                if (empty($restricted_folders)) {
+                    return $query;
+                }
+
+                $query->related('folder');
+                $query->where_open();
+                $query->or_where(array('folder.medif_path', '=', '/'));
+                foreach ($restricted_folders as $restricted_folder) {
+                    $query->or_where(array('folder.medif_path', 'LIKE', $restricted_folder->medif_path.'%'));
+                }
+                $query->where_close();
+                return $query;
+            },
+        ),
     ),
     'search_text' => 'media_title',
     'inspectors' => array(
@@ -29,11 +46,11 @@ return array(
                         'fileName' => array(
                             'label' => __('File name:'),
                         ),
-                        'pathFolder' => array(
-                            'label' => __('Path:'),
+                        'filesize' => array(
+                            'label' => __('File size:'),
                         ),
-                        'extension' => array(
-                            'label' => __('Extension:'),
+                        'dimensions' => array(
+                            'label' => __('Dimensions:'),
                         ),
                     ),
                     'actions' => array('Nos\Media\Model_Media.edit', 'Nos\Media\Model_Media.delete', 'Nos\Media\Model_Media.visualise'),
@@ -100,5 +117,25 @@ return array(
             'defaultView' => 'thumbnails',
         ),
     ),
-
+    'toolbar' => array(
+        'actions' => array(
+            'renew_cache' => array(
+                'label' => __('Renew media’ cache'),
+                'action' => array(
+                    'action' => 'nosAjax',
+                    'params' => array(
+                        'url' => 'admin/noviusos_media/appdesk/clear_cache',
+                    ),
+                ),
+                'targets' => array(
+                    'toolbar-grid' => true,
+                ),
+                'visible' => array(
+                    'check_expert' => function() {
+                        return \Session::user()->user_expert;
+                    }
+                ),
+            ),
+        ),
+    ),
 );

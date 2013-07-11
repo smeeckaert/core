@@ -1,3 +1,4 @@
+
 /**
  * NOVIUS OS - Web OS for digital communication
  *
@@ -7,7 +8,7 @@
  * @link http://www.novius-os.org
  */
 define('jquery-nos',
-    ['jquery', 'jquery-nos-validate', 'jquery-form', 'jquery-ui.button', 'wijmo.wijtextbox', 'wijmo.wijcheckbox', 'wijmo.wijradio', 'wijmo.wijdropdown', 'wijmo.wijexpander', 'wijmo.wijaccordion', 'wijmo.wijdialog'],
+    ['jquery', 'jquery-nos-validate', 'jquery-form', 'jquery-ui.button', 'wijmo.wijexpander', 'wijmo.wijaccordion', 'wijmo.wijdialog'],
     function($) {
         "use strict";
         var undefined = void(0),
@@ -491,6 +492,8 @@ define('jquery-nos',
                             return data[p1] || '';
                         }).replace(/{{urlencode:([\w]+)}}/g, function(str, p1, offset, s) {
                             return encodeURIComponent(data[p1] || '');
+                        }).replace(/{{htmlspecialchars:([\w]+)}}/g, function(str, p1, offset, s) {
+                            return (data[p1] || '').replace(/</g, '&lt;');
                         });
                 } else if ($.isPlainObject(obj)) {
                     $.each(obj, function(key, value) {
@@ -619,18 +622,18 @@ define('jquery-nos',
                         $.nosNotify(json.error, 'error');
                     }
                 }
-                if (json.internal_server_error) {
+                if (json.internal_server_error && console) {
                     var ise = json.internal_server_error;
                     var str = "An internal server error has been detected.\n\n";
                     str +=  ise.type + ' [ ' + ise.severity + ' ]: ' + ise.message + "\n";
                     str += ise.filepath + " @ line " + ise.error_line + "\n\n";
                     str += "Backtrace:\n";
-                    for (var i = 0; i < ise.backtrace.length; i++) {
-                        str += (i + 1) + ': ' + ise.backtrace[i].file + ' @ line ' + ise.backtrace[i].line + "\n";
+                    for (var i in ise.backtrace) {
+                        if (ise.backtrace.hasOwnProperty(i)) {
+                            str += i + ': ' + ise.backtrace[i].file + ' @ line ' + ise.backtrace[i].line + "\n";
+                        }
                     }
-                    if (console) {
-                        console.error(str);
-                    }
+                    console.error(str);
                 }
                 if (json.notify) {
                     if ($.isArray(json.notify)) {
@@ -779,7 +782,6 @@ define('jquery-nos',
             nosFormUI : function() {
                 var $context = this;
 
-                $context.find(":input[type='text'],:input[type='password'],:input[type='email'],textarea").filter(':not(.notransform)').wijtextbox();
                 $context.find(":input[type='submit'],button").filter(':not(.notransform)').each(function() {
                     var data = $(this).data(),
                         options = $.extend(true, {
@@ -826,17 +828,6 @@ define('jquery-nos',
                                 backgroundImage: 'url(' + url + ')'
                             });
                     });
-                });
-                $context.find("select").filter(':not(.notransform)').nosOnShow('one', function() {
-                    var $wijdropdown = $(this).wijdropdown().closest('.wijmo-wijdropdown');
-                    // Cross browser compatibility: prevent the dropdown from protruding over 2 lines
-                    $wijdropdown.width($wijdropdown.width() + 5);
-                });
-                $context.find(":input[type=checkbox]").filter(':not(.notransform)').nosOnShow('one', function() {
-                    $(this).wijcheckbox();
-                });
-                $context.find(":input[type=radio]").filter(':not(.notransform)').nosOnShow('one', function() {
-                    $(this).wijradio();
                 });
                 $context.find('.expander').add($context.filter('.expander')).filter(':not(.notransform)').each(function() {
                     var $this = $(this);
@@ -1036,6 +1027,10 @@ define('jquery-nos',
                             $dialog.addClass(options['class']);
                         }
 
+                        if (options.title) {
+                            options.title = $.nosCleanupTranslation(options.title);
+                        }
+
                         var proceed = true;
                         if (options.ajax && options.contentUrl) {
                             var contentUrl = options.contentUrl;
@@ -1191,7 +1186,7 @@ define('jquery-nos',
                             return false;
                         },
                     self = this;
-                if (args.length > 0 && $.inArray(args[0], ['open', 'close', 'add', 'update', 'init', 'current']) !== -1) {
+                if (args.length > 0 && $.inArray(args[0], ['open', 'close', 'add', 'update', 'reload', 'init', 'current']) !== -1) {
                     method = args.shift();
                 }
 
@@ -1282,6 +1277,18 @@ define('jquery-nos',
                             } else if (self.size() && !self.closest('.ui-dialog-content').size() && noviusos().length) {
                                 var index = getIndex(self);
                                 noviusos().ostabs('update', index, tab);
+                            }
+                        })();
+                        break;
+
+                    case 'reload' :
+                        (function() {
+                            var tab = args[0];
+                            if (window.parent != window && window.parent.$nos) {
+                                window.parent.$nos(window.frameElement).nosTabs('reload');
+                            } else if (self.size() && !self.closest('.ui-dialog-content').size() && noviusos().length) {
+                                var index = getIndex(self);
+                                noviusos().ostabs('reload', index);
                             }
                         })();
                         break;
@@ -1391,5 +1398,9 @@ define('jquery-nos',
             }
         });
 
+        $.widget('wijmo.wijtextbox', {});
+        $.widget('wijmo.wijradio', {});
+        $.widget('wijmo.wijcheckbox', {});
+        $.widget('wijmo.wijdropdown', {});
         return $;
     });

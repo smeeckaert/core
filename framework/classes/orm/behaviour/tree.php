@@ -90,7 +90,7 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
      * @param  array          $where
      * @param  array          $order_by
      * @param  array          $options
-     * @return array          of \Orm\Model
+     * @return array(\Nos\Orm\Model)
      */
     public function find_children($item, $where = array(), $order_by = array(), $options = array())
     {
@@ -107,7 +107,8 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
     /**
      * return the parent of the object
      *
-     * @return Orm\Model The parent object
+     * @param \Nos\Orm\Model $item
+     * @return \Nos\Orm\Model The parent object
      */
     public function get_parent($item)
     {
@@ -117,10 +118,12 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
     /**
      * Sets a new parent for the object
      *
-     * @param   Orm\Model The parent object
+     * @param \Nos\Orm\Model $item
+     * @param \Nos\Orm\Model The parent object
+     * @throws \Exception
      * @return void
      */
-    public function set_parent($item, $parent = null)
+    public function set_parent(Orm\Model $item, $parent = null)
     {
         if ($parent !== null) {
             // Check if the object is appropriate
@@ -170,7 +173,7 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
             return array();
         }
 
-        return $item::find('all', array('where' => array(array(\Arr::get($item->primary_key(), 0), 'IN', $this->get_ids_children($item, $include_self)))));
+        return $item::find('all', array('where' => array(array(\Arr::get($item->primary_key(), 0), 'IN', $ids))));
     }
 
     protected static function _populate_id_children($current_item, $children_relation, &$array)
@@ -203,6 +206,23 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
 
         if (!empty($this->_properties['level_property'])) {
             $item->{$this->_properties['level_property']} = $parent === null ? 1 : $parent->{$this->_properties['level_property']} + 1;
+        }
+    }
+
+    public function crudFields(&$fields, $crud)
+    {
+        if ($crud->behaviours['contextable']) {
+            $parent_id = $crud->item->parent_relation()->key_from[0];
+            $fields = \Arr::merge(
+                $fields,
+                array(
+                    $parent_id => array(
+                        'renderer_options' => array(
+                            'context' => $crud->item->{$crud->behaviours['contextable']['context_property']},
+                        ),
+                    ),
+                )
+            );
         }
     }
 }

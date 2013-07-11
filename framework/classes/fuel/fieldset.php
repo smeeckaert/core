@@ -11,10 +11,16 @@
 class Fieldset extends \Fuel\Core\Fieldset
 {
     protected $append = array();
+    protected $prepend = array();
     protected $config_used = array();
     protected $js_validation = false;
     protected $require_js = array();
     protected $instance = null;
+
+    public function prepend($content)
+    {
+        $this->prepend[] = $content;
+    }
 
     public function append($content)
     {
@@ -52,7 +58,7 @@ class Fieldset extends \Fuel\Core\Fieldset
             ? $this->form()->close().PHP_EOL
             : $this->form()->{$this->fieldset_tag.'_close'}();
 
-        return $close.$this->build_append().$this->build_js_validation();
+        return $this->build_prepend().$close.$this->build_append().$this->build_js_validation();
     }
 
     public function build_hidden_fields()
@@ -70,10 +76,21 @@ class Fieldset extends \Fuel\Core\Fieldset
         return $output;
     }
 
+    public function build_prepend()
+    {
+        return $this->build_list($this->prepend);
+    }
+
     public function build_append()
     {
+        return $this->build_list($this->append);
+    }
+
+    public function build_list($list)
+    {
         $append = array();
-        foreach ($this->append as $a) {
+
+        foreach ($list as $a) {
             if (is_callable($a)) {
                 $append[] = call_user_func($a, $this);
             } else {
@@ -264,13 +281,13 @@ class Fieldset extends \Fuel\Core\Fieldset
         // Compatibility with 0.1 configuration (widgets have been renamed to renderers)
         foreach ($properties as &$property) {
             if (isset($property['widget'])) {
-                logger(\Fuel::L_WARNING, 'The widget key is deprecated ('.$property['widget'].'). Please use the renderer key and update class name.');
+                \Log::deprecated('The widget key is deprecated ('.$property['widget'].'). Please use the renderer key and update class name.');
 
                 $property['renderer'] = preg_replace('`^Nos(.+)Widget_(.+)$`', 'Nos$1Renderer_$2', $property['widget']);
                 unset($property['widget']);
             }
             if (isset($property['widget_options'])) {
-                logger(\Fuel::L_WARNING, 'The widget_options key is deprecated. Please use the renderer_options key.');
+                \Log::deprecated('The widget_options key is deprecated. Please use the renderer_options key.');
 
                 $property['renderer_options'] =& $property['widget_options'];
                 unset($property['widget_options']);
@@ -390,7 +407,7 @@ class Fieldset extends \Fuel\Core\Fieldset
 
         if (isset($instance)) {
             // Let behaviours do their job (publication for example)
-            $instance->form_fieldset_fields($config);
+            $instance->event('form_fieldset_fields', array(&$config));
         }
 
         $fieldset->add_renderers($config, $options);
@@ -415,6 +432,7 @@ class Fieldset extends \Fuel\Core\Fieldset
                 ));
             }
         }
+
         return $fieldset;
     }
 
@@ -437,7 +455,7 @@ class Fieldset extends \Fuel\Core\Fieldset
         if (empty($behaviour_twinnable) || $instance->is_main_context()) {
             return;
         }
-        foreach ($behaviour_twinnable['invariant_fields'] as $f) {
+        foreach ($behaviour_twinnable['common_fields'] as $f) {
             $field = $this->field($f);
             if (!empty($field)) {
                 $field->set_attribute('readonly', true);
@@ -455,6 +473,8 @@ class Fieldset extends \Fuel\Core\Fieldset
             // Generate a new ID for the form
             $form_attributes = $this->get_config('form_attributes', array());
             $form_attributes['id'] = 'form_id_'.$uniqid;
+            list($application) = \Config::configFile($instance);
+            $form_attributes['class'] = str_replace(array('\\', '_'), '-', strtolower(get_class($instance))).' '.$application;
             $this->set_config('auto_id_prefix', 'form'.$uniqid.'_');
             $this->set_config('form_attributes', $form_attributes);
             foreach ($this->fields as $field) {
@@ -552,22 +572,15 @@ class Fieldset extends \Fuel\Core\Fieldset
             }
 
             // Let behaviours do their job (publication for example)
-            $item->form_processing_behaviours($data, $json_response);
+            $item->event('form_processing', array($data, &$json_response));
 
             if (!empty($options['before_save']) && is_callable($options['before_save'])) {
                 call_user_func($options['before_save'], $item, $data);
             }
 
             if (!empty($options['success']) && is_callable($options['success'])) {
-                if ($item->is_new()) {
-                    // The callback is called after save() to access the ID
-                    $item->save();
-                    $json_user = call_user_func($options['success'], $item, $data);
-                } else {
-                    // The callback is called before save() to allow a check for is_changed() properties
-                    $json_user = call_user_func($options['success'], $item, $data);
-                    $item->save();
-                }
+                $item->save();
+                $json_user = call_user_func($options['success'], $item, $data);
                 $json_response = \Arr::merge($json_response, $json_user);
             } else {
                 $item->save();

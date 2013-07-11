@@ -54,9 +54,9 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
 
         $view = View::forge('admin/appdesk');
 
-        $contexts = Tools_Context::contexts();
-        $locales = Tools_Context::locales();
-        $sites = Tools_Context::sites();
+        $contexts = \Nos\User\Permission::contexts();
+        $locales = \Nos\User\Permission::locales();
+        $sites = \Nos\User\Permission::sites();
 
         foreach ($contexts as $context => $params) {
             $site = Tools_Context::siteCode($context);
@@ -84,12 +84,21 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
 
         $view->set('appdesk', \Format::forge($params)->to_json(), false);
 
+        list($application) = \Config::configFile(get_called_class());
+        $view->set('application', $application);
+
+        $view->set('model', isset($this->config['model']) ? $this->config['model'] : null);
+
+        $view->set('css', isset($this->config['css']) ? $this->config['css'] : null);
+
+        $view->set('notify', isset($this->config['notify']) ? $this->config['notify'] : null);
+
         return $view;
     }
 
     public static function process_config($application, $config)
     {
-        $valid_keys = array('query', 'search_text', 'dataset', 'selectedView', 'views', 'appdesk', 'tree', 'configuration_id', 'inputs', 'hideContexts', 'i18n');
+        $valid_keys = array('model', 'css', 'notify', 'query', 'search_text', 'dataset', 'selectedView', 'views', 'appdesk', 'tree', 'configuration_id', 'inputs', 'hideContexts', 'i18n', 'custom');
         if (isset($config['model'])) {
             $config['model'] = ltrim($config['model'], '\\');
             $namespace_model = \Inflector::get_namespace($config['model']);
@@ -336,6 +345,17 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
             if (!isset($config['appdesk']['appdesk']['buttons'])) {
                 $config['appdesk']['appdesk']['buttons'] = array();
 
+                $config_toolbar_actions = array();
+                foreach ($config['toolbar']['actions'] as $key => $action) {
+                    if (\Config::canAddAction($action, array(
+                            'all_targets' => false,
+                            'target' => 'toolbar-grid',
+                            'class' => get_called_class()
+                        ))) {
+                        $config_toolbar_actions[$key] = $action;
+                    }
+                }
+
                 $actions = \Arr::merge(
                     \Config::actions(
                         array(
@@ -344,7 +364,7 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
                             'class' => get_called_class()
                         )
                     ),
-                    $config['toolbar']['actions']
+                    $config_toolbar_actions
                 );
 
                 $primary = false;
@@ -411,7 +431,10 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
             }
 
             foreach ($config['appdesk']['appdesk']['grid']['columns'] as $key => $column) {
-                if (!empty($column['column']) && $column['column'] == $config['model']::title_property()) {
+                if (
+                    (empty($column['column']) && $key === $config['model']::title_property()) ||
+                    (!empty($column['column']) && $column['column'] == $config['model']::title_property())
+                ) {
                     if (!is_array($column['cellFormatters']) || !isset($column['cellFormatters']['link'])) {
                         $config['appdesk']['appdesk']['grid']['columns'][$key]['cellFormatters']['link'] = array(
                             'type' => 'link',

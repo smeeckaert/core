@@ -29,8 +29,13 @@ define('APPPATH', NOSROOT.'local'.DIRECTORY_SEPARATOR);
 define('PKGPATH', NOSROOT.'novius-os'.DIRECTORY_SEPARATOR.'packages'.DIRECTORY_SEPARATOR);
 define('COREPATH', NOSROOT.'novius-os'.DIRECTORY_SEPARATOR.'fuel-core'.DIRECTORY_SEPARATOR);
 define('NOSPATH', NOSROOT.'novius-os'.DIRECTORY_SEPARATOR.'framework'.DIRECTORY_SEPARATOR);
+define('VENDORPATH', NOSROOT.'vendor'.DIRECTORY_SEPARATOR);
+
+
 
 define('FUEL_EXTEND_PATH', NOSPATH.'classes'.DIRECTORY_SEPARATOR.'fuel'.DIRECTORY_SEPARATOR);
+
+define('OS_WIN', defined('PHP_WINDOWS_VERSION_PLATFORM'));
 
 // Load in the Autoloader
 require FUEL_EXTEND_PATH.'autoloader.php';
@@ -57,16 +62,21 @@ if (!MBSTRING) {
         'Email' => FUEL_EXTEND_PATH.'email.php',
         'Email_Driver' => FUEL_EXTEND_PATH.'email'.DIRECTORY_SEPARATOR.'driver.php',
         'Fuel' => FUEL_EXTEND_PATH.'fuel.php',
+        'File' => FUEL_EXTEND_PATH.'file.php',
         'Finder' => FUEL_EXTEND_PATH.'finder.php',
         'Fieldset' => FUEL_EXTEND_PATH.'fieldset.php',
         'Fieldset_Field' => FUEL_EXTEND_PATH.'fieldset_field.php',
         'Generate' => FUEL_EXTEND_PATH.'oil'.DIRECTORY_SEPARATOR.'generate.php',
+        'Image' => FUEL_EXTEND_PATH.'image.php',
+        'Image_Driver' => FUEL_EXTEND_PATH.'image'.DIRECTORY_SEPARATOR.'driver.php',
+        'Log' => FUEL_EXTEND_PATH.'log.php',
         'Migrate' => FUEL_EXTEND_PATH.'migrate.php',
         'Module' => FUEL_EXTEND_PATH.'module.php',
         'ModuleNotFoundException' => FUEL_EXTEND_PATH.'module.php',
         'Profiler' => FUEL_EXTEND_PATH.'profiler.php',
         'Refine' => FUEL_EXTEND_PATH.'oil'.DIRECTORY_SEPARATOR.'refine.php',
         'Response' => FUEL_EXTEND_PATH.'response.php',
+        'Security' => FUEL_EXTEND_PATH.'security.php',
         'Session' => FUEL_EXTEND_PATH.'session.php',
         'Str' => FUEL_EXTEND_PATH.'str.php',
         'Validation_Error'  => FUEL_EXTEND_PATH.'validation_error.php',

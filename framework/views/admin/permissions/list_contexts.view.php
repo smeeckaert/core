@@ -30,7 +30,7 @@ foreach (\Nos\Tools_Context::sites() as $site => $site_params) {
         $category_key = $site.'::'.$locale;
         if (isset($contexts[$category_key])) {
             ?>
-            <input type="checkbox" name="<?= $checkbox_name ?>" value="<?= $category_key ?>" <?= $role->checkPermission($permission_name, $category_key) ? 'checked' : '' ?> />
+            <input type="checkbox" name="<?= $checkbox_name ?>" value="<?= $category_key ?>" <?= $role->checkPermissionOrEmpty($permission_name, $category_key) ? 'checked' : '' ?> />
             <?php
         }
         ?>
@@ -81,8 +81,7 @@ require(['jquery-nos', 'wijmo.wijgrid'], function($) {
                             if (checked === null) {
                                 checked = $checkbox.is(':checked');
                             }
-                            $checkbox.attr('checked', !checked)
-                                .wijcheckbox('refresh');
+                            $checkbox.prop('checked', !checked);
                         }
                     });
 
@@ -94,8 +93,7 @@ require(['jquery-nos', 'wijmo.wijgrid'], function($) {
                     e.stopImmediatePropagation();
 
                     var $checkbox = $tr.find(':checkbox');
-                    $checkbox.attr('checked', !$checkbox.is(':checked'))
-                        .wijcheckbox('refresh');
+                    $checkbox.prop('checked', !$checkbox.is(':checked'));
                 });
             }
         }

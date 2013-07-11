@@ -2,6 +2,15 @@
 
 Nos\I18n::current_dictionary(array('noviusos_page::common', 'nos::application', 'nos::common'));
 
+$check_draft = function($page) {
+    // Not published => don't disable
+    if ($page->planificationStatus() == 0) {
+        return false;
+    }
+    // Published or scheduled => disable
+    return \Nos\User\Permission::atMost('noviusos_page::page', '1_draft_only', '2_full_access');
+};
+
 return array(
     'data_mapping' => array(
         'page_title' => array(
@@ -27,11 +36,6 @@ return array(
             'value' => function($page) {
                 return (bool) (int) $page->page_entrance;
             }
-        ),
-        'page_published' => array(
-            'title' => __('Status'),
-            'method' => 'publication_status',
-            'multiContextHide' => true,
         ),
         'iconClasses' => array(
             'value' => function($page) {
@@ -81,9 +85,48 @@ return array(
             'delete' => array(
                 'primary' => false,
                 'disabled' => array(
-                    function($page) {
+                    'check_home' => function($page) {
+                        return !!$page->page_home ? __('The home page cannot be deleted. To delete this page, set another page as home page first.') : false;
+                    },
+                    'check_locked' => function($page) {
                         return ($page->page_lock == $page::LOCK_DELETION) ? __('You can’t delete this page. It is locked.') : false;
-                    }),
+                    },
+                    'check_draft' => $check_draft,
+                    'check_draft_children' => function($item, $params = array()) {
+                        // This will check if any children is published to ensure people with the draft access
+                        // cannot delete an unpublished page which contains published children
+
+                        // Only do this in the popup because it could be a bit resource-hungry
+                        if (!isset($params['delete_popup'])) {
+                            return false;
+                        }
+
+                        // If user has full access to the pages application, allow the action
+                        if (\Nos\User\Permission::atLeast('noviusos_page::page', '2_full_access', '2_full_access')) {
+                            return false;
+                        }
+
+                        // If there is no children, allow the action
+                        $ids = $item->get_ids_children(false);
+                        if (empty($ids)) {
+                            return false;
+                        }
+
+                        $count_unpublished = $item::query(array(
+                            'where' => array(
+                                array(\Arr::get($item->primary_key(), 0), 'IN', $ids),
+                                array('published', false),
+                            ),
+                        ))->count();
+                        // If any child is published, deny the action
+                        return $count_unpublished != count($ids);
+                    },
+                ),
+            ),
+            'edit' => array(
+                'disabled' => array(
+                    'check_draft' => $check_draft,
+                ),
             ),
             'add' => array(
                 'label' => __('Add a page'),
@@ -102,9 +145,10 @@ return array(
                     'toolbar-edit' => true,
                 ),
                 'visible' => array(
-                function($params) {
-                    return !isset($params['item']) || !$params['item']->is_new();
-                })
+                    'is_new' => function($params) {
+                        return !isset($params['item']) || !$params['item']->is_new();
+                    },
+                ),
             ),
             'add_subpage' => array(
                 'label' => __('Add a sub-page to this page'),
@@ -139,9 +183,32 @@ return array(
                     'grid' => true,
                 ),
                 'disabled' => array(
-                    function($page) {
+                    'check_monocontext' => function($page) {
+                        $controller = \Nos\Nos::main_controller();
+                        static $disabled = null;
+                        if ($disabled === null) {
+                            $disabled = false;
+                            if (is_subclass_of($controller, 'Nos\Controller_Admin_Appdesk')) {
+                                $context = Input::get('context', null);
+                                if (empty($context) || (is_array($context) && count($context) > 1)) {
+                                    $one_site = count(Nos\Tools_Context::sites()) === 1;
+                                    if ($one_site) {
+                                        $disabled = __('We know it’s frustrating, but you can only set a page as home page when viewing one language. Select a language from the drop-down list in the top-right corner to do so.');
+                                    } else {
+                                        $disabled = __('We know it’s frustrating, but you can only set a page as home page when viewing one context. Select a context from the drop-down list in the top-right corner to do so.');
+                                    }
+                                }
+                            }
+                        }
+                        return $disabled;
+                    },
+                    'check_published' => function($page) {
+                        return !$page->published() ? __('You cannot set this page as home page because it isn’t published. Publish it first.') : false;
+                    },
+                    'check_home' => function($page) {
                         return !!$page->page_home ? __('This page is the home page already.') : false;
-                    }),
+                    },
+                ),
             ),
             'duplicate' => array(
                 'action' => array(
@@ -156,6 +223,7 @@ return array(
                 'targets' => array(
                     'grid' => true,
                 ),
+                // Don't disable, duplicated pages are always unpublished
             ),
             'renew_cache' => array(
                 'label' => __('Renew pages’ cache'),
@@ -176,6 +244,6 @@ return array(
             'visualise',
             'share',
             'delete',
-        )
+        ),
     ),
 );

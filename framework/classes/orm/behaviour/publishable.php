@@ -30,29 +30,29 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
         if (!isset($this->_properties['publication_state_property']) && isset($this->_properties['publication_bool_property'])) {
             $this->_properties['publication_state_property'] = $this->_properties['publication_bool_property'];
             unset($this->_properties['publication_bool_property']);
-            \Log::warning("Deprecated Orm_Behaviour_Publishable::publication_bool_property in class '$class'. Please use 'publication_state_property' instead.");
+            \Log::deprecated('Deprecated Orm_Behaviour_Publishable::publication_bool_property in class "'.$class.'". Please use "publication_state_property" instead.');
         }
     }
 
-    public function dataset(&$dataset)
+    public function dataset(Orm\Model $item, &$dataset)
     {
-        $dataset['publication_status'] = array($this, 'publication_status');
+        $dataset['publication_status'] = array($item, 'publication_status');
     }
 
-    public function publication_status($item)
+    public function publication_status(Orm\Model $item)
     {
         return (string) \View::forge('nos::admin/orm/publishable_label', array(
             'item' => $item,
         ), false);
     }
 
-    public function planificationStatus($item)
+    public function planificationStatus(Orm\Model $item)
     {
         $property = $this->_properties['publication_state_property'];
         return $item->get($property);
     }
 
-    public function publicationStart($item)
+    public function publicationStart(Orm\Model $item)
     {
         if (empty($this->_properties['publication_start_property'])) {
             return null;
@@ -60,7 +60,7 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
         return $item->get($this->_properties['publication_start_property']);
     }
 
-    public function publicationEnd($item)
+    public function publicationEnd(Orm\Model $item)
     {
         if (empty($this->_properties['publication_end_property'])) {
             return null;
@@ -73,7 +73,7 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
      *
      * @return string
      */
-    public function published($item)
+    public function published(Orm\Model $item)
     {
         $property = $this->_properties['publication_state_property'];
         $status = $item->get($property);
@@ -123,7 +123,8 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
                     }
 
                     if ($published_key !== null) {
-                        $now = \Db::expr('NOW()');
+                        // Round to last minute to benefit from the SQL query cache
+                        $now = date('Y-m-d H:i:00', strtotime('now'));
                         $where[$published_key] = array(
                             array($this->_properties['publication_state_property'], $published_value),
                         );
@@ -148,7 +149,7 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
         }
     }
 
-    public function form_processing($item, $data, $response_json)
+    public function form_processing(Orm\Model $item, $data, $response_json)
     {
         $publishable = $this->_properties['publication_state_property'];
         // $data[$publishable] can possibly be filled with the data (see multi-line comment below)
@@ -172,16 +173,33 @@ class Orm_Behaviour_Publishable extends Orm_Behaviour
         $response_json['publication_initial_status'] = $status;
     }
 
-    /*
-    // This is only needed if we want the $data variable from the above function to be filled with the publishable attribute
-
-    public function form_fieldset_fields($item, &$fieldset)
+    public function crudConfig(&$config, $crud)
     {
-        $props = $item->behaviours(__CLASS__);
-        $publishable = $props['publication_state_property'];
-        // Empty array just so the data are retrieved from the input
-        $fieldset[$publishable] = array();
-    }
-    */
+        // 1. adding the Renderer in the fields list
+        if (!isset($config['fields']['publishable'])) {
+            $config['fields']['_publishable'] = array();
+        }
+        $config['fields']['_publishable'] = \Arr::merge(array(
+            'renderer' => 'Nos\Renderer_Publishable',
+            'label' => '',
+        ), $config['fields']['_publishable']);
 
+        foreach (array('layout', 'layout_insert', 'layout_update') as $layout_name) {
+            if (!empty($config[$layout_name])) {
+                foreach ($config[$layout_name] as $name => $layout) {
+                    if (isset($layout['view']) && in_array($layout['view'], array('nos::form/layout_standard', 'form/layout_standard'))) {
+                        if (!isset($config[$layout_name][$name]['params'])) {
+                            $config[$layout_name][$name]['params'] = array();
+                        }
+                        if (!isset($config[$layout_name][$name]['params']['subtitle'])) {
+                            $config[$layout_name][$name]['params']['subtitle'] = array('_publishable');
+                        } else {
+                            array_unshift($config[$layout_name][$name]['params']['subtitle'], '_publishable');
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

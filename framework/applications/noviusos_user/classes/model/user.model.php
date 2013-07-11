@@ -103,15 +103,12 @@ class Model_User extends \Nos\Orm\Model
 
     protected static $_observers = array(
         'Orm\\Observer_Self' => array(
-            'events' => array('before_save', 'after_save', 'before_delete', 'after_delete'),
         ),
         'Orm\Observer_CreatedAt' => array(
-            'events' => array('before_insert'),
             'mysql_timestamp' => true,
             'property'=>'user_created_at'
         ),
         'Orm\Observer_UpdatedAt' => array(
-            'events' => array('before_save'),
             'mysql_timestamp' => true,
             'property'=>'user_updated_at'
         ),
@@ -190,7 +187,7 @@ class Model_User extends \Nos\Orm\Model
      */
     public function check_permission($app, $key)
     {
-        logger(\Fuel::L_WARNING, '\Nos\User\Model_User->check_permission($app, $key) is deprecated. Please use \Nos\User\Model_User->checkPermission($permission_name, $category_key).');
+        \Log::deprecated('->check_permission($app, $key) is deprecated, use ->checkPermission($permission_name, $category_key) instead.', 'Chiba.2');
 
         return $this->checkPermission($app, $key);
     }
@@ -200,16 +197,38 @@ class Model_User extends \Nos\Orm\Model
      * @param   null|string  $category_key     (optional) If the permission has categories, the category key to check against
      * @return  bool  Has the user the required authorisation?
      */
-    public function checkPermission($permission_name, $category_key = null)
+    public function checkPermission($permission_name, $category_key = null, $allowEmpty = false)
+    {
+        return $this->checkRolesPermissions('exists', func_get_args());
+    }
+
+    /**
+     * @param $method Method to check: isAllowed, exists, atLeast, atMost
+     * @param string $args
+     * @return bool
+     */
+    public function checkRolesPermission()
     {
         $args = func_get_args();
-        foreach ($this->roles as $g) {
-            if (call_user_func_array(array($g, 'checkPermission'), $args)) {
+        $method = array_shift($args);
+        foreach ($this->roles as $role) {
+            if (call_user_func_array(array($role, 'checkPermission'.$method), $args)) {
                 return true;
             }
         }
-
         return false;
+    }
+
+    public function listPermissionCategories($permissionName)
+    {
+        $categories = array();
+        foreach ($this->roles as $role) {
+            $roleCategories = $role->listPermissionCategories($permissionName);
+            if (!empty($roleCategories)) {
+                $categories = $categories + $roleCategories;
+            }
+        }
+        return $categories;
     }
 
     public function fullname()

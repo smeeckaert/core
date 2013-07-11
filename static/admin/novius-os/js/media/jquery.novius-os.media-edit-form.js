@@ -28,10 +28,10 @@ define('jquery-nos-media-edit-form',
                     });
                     $same_title.change(function() {
                         if ($(this).is(':checked')) {
-                            $slug.attr('readonly', true).addClass('ui-state-disabled').removeClass('ui-state-default');
+                            $slug.attr('readonly', true).addClass('ui-state-disabled');
                             $title.triggerHandler('change');
                         } else {
-                            $slug.removeAttr('readonly').addClass('ui-state-default').removeClass('ui-state-disabled');
+                            $slug.removeAttr('readonly').removeClass('ui-state-disabled');
                         }
                     }).triggerHandler('change');
 
@@ -41,11 +41,17 @@ define('jquery-nos-media-edit-form',
                                 src: json.thumbnailUrl + '?' + (new Date().getTime())
                             });
                         }
-                        if (json.media_file) {
-                            $slug.val(json.media_file);
+                        if (json.dataset.file) {
+                            $slug.val(json.dataset.file);
                         }
-                        if (json.media_ext) {
-                            $container.find('.media_extension').text(json.media_ext);
+                        if (json.dataset.ext) {
+                            $container.find('.media_extension').text(json.dataset.ext);
+                        }
+                        if (json.dataset.filesize) {
+                            $container.find('.media_filesize').text(json.dataset.filesize);
+                        }
+                        if (json.dataset.dimensions) {
+                            $container.find('.media_dimensions').text(json.dataset.dimensions);
                         }
                     });
                 });

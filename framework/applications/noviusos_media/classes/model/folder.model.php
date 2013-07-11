@@ -52,6 +52,18 @@ class Model_Folder extends \Nos\Orm\Model
             'data_type' => 'timestamp',
             'null' => false,
         ),
+        'medif_created_by_id' => array(
+            'default' => null,
+            'data_type' => 'int unsigned',
+            'null' => true,
+            'convert_empty_to_null' => true,
+        ),
+        'medif_updated_by_id' => array(
+            'default' => null,
+            'data_type' => 'int unsigned',
+            'null' => true,
+            'convert_empty_to_null' => true,
+        ),
     );
 
     protected static $_has_one = array();
@@ -86,12 +98,10 @@ class Model_Folder extends \Nos\Orm\Model
 
     protected static $_observers = array(
         'Orm\Observer_CreatedAt' => array(
-            'events' => array('before_insert'),
             'mysql_timestamp' => true,
             'property'=>'medif_created_at'
         ),
         'Orm\Observer_UpdatedAt' => array(
-            'events' => array('before_save'),
             'mysql_timestamp' => true,
             'property'=>'medif_updated_at'
         )
@@ -99,52 +109,77 @@ class Model_Folder extends \Nos\Orm\Model
 
     protected static $_behaviours = array(
         'Nos\Orm_Behaviour_Tree' => array(
-            'events' => array('before'),
             'parent_relation' => 'parent',
             'children_relation' => 'children',
         ),
         'Nos\Orm_Behaviour_Virtualpath' => array(
-            'events' => array('before_save', 'after_save', 'change_parent'),
             'virtual_name_property' => 'medif_dir_name',
             'virtual_path_property' => 'medif_path',
             'extension_property' => '/',
+        ),
+        'Nos\Orm_Behaviour_Author' => array(
+            'created_by_property' => 'medif_created_by_id',
+            'updated_by_property' => 'medif_updated_by_id',
         ),
     );
 
     protected $_data_events = array();
 
     /**
-     * Delete all the public/cache entries (image thumbnails) for this folder
+     * Delete the folder from disk
      */
-    public function delete_public_cache()
+    public function deleteFromDisk()
     {
-        // Delete cached media entries
-        $path_public     = DOCROOT.Model_Media::$public_path.ltrim($this->medif_path, '/');
-        $path_thumbnails = str_replace(DOCROOT.'media/', DOCROOT.'cache/media/', $path_public);
+        $this->deleteCache();
+        $path = $this->path();
+        is_dir($path) and \File::delete_dir($path, true, true);
+    }
 
+    /**
+     * @deprecated Use deleteFromDisk() method instead
+     */
+    public function delete_from_disk()
+    {
+        \Log::deprecated('->delete_from_disk() is deprecated, use ->deleteFromDisk() instead.', 'Chiba.2');
+        return $this->deleteFromDisk();
+    }
+
+    /**
+     * Delete all caches of the folder
+     */
+    public function deleteCache()
+    {
         try {
-            // delete_dir($path, $recursive, $delete_top)
-            is_dir($path_public) and \File::delete_dir($path_public, true, true);
-            is_dir($path_thumbnails) and \File::delete_dir($path_thumbnails, true, true);
+            $dir_path = ltrim($this->medif_path, '/');
+            $top = $this->medif_id != 1;
 
-            return true;
+            $path_public = DOCROOT.'cache'.DS.Model_Media::$public_path.$dir_path;
+            $path_public_cache = DOCROOT.Model_Media::$public_path.$dir_path;
+            $path_private_cache = \Config::get('cache_dir').'media'.DS.$dir_path;
+
+            is_dir($path_public) and \File::delete_dir($path_public, true, $top);
+            is_dir($path_public_cache) and \File::delete_dir($path_public_cache, true, $top);
+            is_dir($path_private_cache) and \File::delete_dir($path_private_cache, true, $top);
+
+            if (!$top) {
+                is_dir($path_public) and \File::create($path_public, '.gitkeep');
+                is_dir($path_public_cache) and \File::create($path_public_cache, '.gitkeep');
+                is_dir($path_private_cache) and \File::create($path_private_cache, '.gitkeep');
+            }
         } catch (\Exception $e) {
             if (\Fuel::$env == \Fuel::DEVELOPMENT) {
                 throw $e;
             }
-            return false;
         }
     }
 
-    public function delete_from_disk()
+    /**
+     * @deprecated Use deleteCache() method instead
+     */
+    public function delete_public_cache()
     {
-        $path = $this->path();
-        if (is_dir($path)) {
-            // delete_dir($path, $recursive, $delete_top)
-            return is_dir($path) and \File::delete_dir($path, true, true);
-        }
-
-        return true;
+        \Log::deprecated('->delete_public_cache() is deprecated, use ->deleteCache() instead.', 'Chiba.2');
+        return $this->deleteCache();
     }
 
     public function path($file = '')

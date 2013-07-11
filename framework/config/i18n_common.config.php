@@ -14,11 +14,7 @@ return array(
     'notification item not found' => __('We cannot find this item.'),
     'deleted popup title' => __('Bye bye'),
     'deleted popup close' => __('Close tab'),
-
-    // Blank slate
-    'translate error parent not available in context' => __('We’re afraid this item cannot be added to {{context}} because its <a>parent</a> is not available in this context yet.'),
-    'translate error parent not available in language' => __('We’re afraid this item cannot be translated into {{language}} because its <a>parent</a> is not available in this language yet.'),
-    'translate error impossible context' => __('This item cannot be added in {{context}}. (How come you get this error message? You’ve hacked your way into here, haven’t you?)'),
+    'action not allowed' => __('You’re not allowed to carry out this action. Ask your colleagues to find out why.'),
 
     // Deletion popup
     'deleting item title' => __('Deleting the item ‘{{title}}’'),
@@ -46,6 +42,11 @@ return array(
     'deleting with N contexts and 1 child' => __('This item exists in <strong>{{context_count}} contexts</strong> and has <strong>one sub-item</strong>.'),
     'deleting with N languages and N children' => __('This item exists in <strong>{{language_count}} languages</strong> and has <strong>{{children_count}} sub-items</strong>.'),
     'deleting with N languages and 1 child' => __('This item exists in <strong>{{language_count}} languages</strong> and has <strong>one sub-item</strong>.'),
+
+    # Keep only if the model has the behaviour Twinnable
+    'translate error parent not available in context' => __('We’re afraid this item cannot be added to {{context}} because its <a>parent</a> is not available in this context yet.'),
+    'translate error parent not available in language' => __('We’re afraid this item cannot be translated into {{language}} because its <a>parent</a> is not available in this language yet.'),
+    'translate error impossible context' => __('This item cannot be added in {{context}}. (How come you get this error message? You’ve hacked your way into here, haven’t you?)'),
 
     # Keep only if the model has the behaviour Tree
     'deleting with 1 child' => __('This item has <strong>1 sub-item</strong>.'),

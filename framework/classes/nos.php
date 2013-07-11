@@ -108,11 +108,13 @@ class Nos
         static::_parse_medias($content);
         static::_parse_internals($content);
 
-        $content = preg_replace(
-            '`href="#([^#"])`iUu',
-            'href="'.static::main_controller()->getUrl().(!empty($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '').'#\\1',
-            $content
-        );
+        if (NOS_ENTRY_POINT === Nos::ENTRY_POINT_FRONT) {
+            $content = preg_replace(
+                '`href="#([^#"])`iUu',
+                'href="'.static::main_controller()->getUrl().(!empty($_SERVER['QUERY_STRING']) ? '?'.$_SERVER['QUERY_STRING'] : '').'#\\1',
+                $content
+            );
+        }
 
         $content = str_replace(
             'href="##',
@@ -219,9 +221,9 @@ class Nos
                     }
                 } else {
                     if (!empty($params['height'])) {
-                        $media_url = $media->get_public_path_resized($params['width'], $params['height']);
+                        $media_url = $media->urlResized($params['width'], $params['height']);
                     } else {
-                        $media_url = $media->get_public_path();
+                        $media_url = $media->url();
                     }
                     $content = preg_replace('`'.preg_quote($params['url'], '`').'(?!\d)`u', $media_url, $content);
                 }

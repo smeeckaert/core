@@ -71,7 +71,7 @@ class Controller_Front extends Controller
         $this->_cache_duration = \Config::get('novius-os.cache_duration_page', 60);
     }
 
-    public function router($action, array $params, $status = 200)
+    public function router($action, $params, $status = 200)
     {
         $this->_status = $status;
 
@@ -91,21 +91,22 @@ class Controller_Front extends Controller
 
         // POST or preview means no cache. Ever.
         // We don't want cache in DEV except if _cache=1
-        if (\Input::method() == 'POST' || $this->_is_preview) {
+        if ($this->_is_preview) {
             $this->_use_cache = false;
         } else {
             $this->_use_cache = \Input::get('_cache', \Config::get('novius-os.cache', true));
         }
 
         \Event::trigger('front.start');
+
         \Event::trigger_function('front.start', array(array('url' => &$url, 'cache_path' => &$cache_path)));
 
-        $cache_path = str_replace(array('http://', 'https:://', '/'), array('', '', '_'), rtrim($this->_base_href, '/')).DS.rtrim($cache_path, '/');
+        $cache_path = \Nos\FrontCache::getPathFromUrl($this->_base_href, $this->_url);
 
-        $this->_cache = FrontCache::forge('pages'.DS.$cache_path);
+        $this->_cache = FrontCache::forge($cache_path);
 
         try {
-            if (!$this->_use_cache) {
+            if (!$this->_use_cache || \Input::method() == 'POST') {
                 throw new CacheNotFoundException();
             }
 
@@ -238,7 +239,7 @@ class Controller_Front extends Controller
             }
 
             if ($_404) {
-                \Event::trigger('front.404NotFound', array('url' => $this->_page_url));
+                \Event::trigger('front.404NotFound', array('url' => rtrim($this->_page_url, '/')));
 
                 // If no redirection then we display 404
                 if (!empty($url)) {
@@ -644,6 +645,7 @@ class Controller_Front extends Controller
                 if (!empty($page)) {
                     $this->_page = $page;
                     $this->_page_url = $url;
+
                     if ($page->page_entrance && !empty($url)) {
                         \Response::redirect($domain, 'location', 301);
                         exit();
@@ -664,7 +666,7 @@ class Controller_Front extends Controller
 
         $this->_context = $this->_page->get_context();
         $this->_context_url = $this->_contexts_possibles[$this->_context];
-        \Nos\I18n::setLocale(\Nos\Tools_Context::localeCode($this->_page->get_context()));
+        \Nos\I18n::setLocale(\Nos\Tools_Context::localeCode($this->_context));
 
         \Fuel::$profiling && \Profiler::console('page_id = ' . $this->_page->page_id);
 
@@ -839,5 +841,13 @@ class Controller_Front extends Controller
     public function addCacheSuffixHandler(array $handler)
     {
         return $this->_cache->addSuffixHandler($handler);
+    }
+
+    /**
+     * Deletes current cache file
+     */
+    public function deleteCache()
+    {
+        $this->_cache->delete();
     }
 }

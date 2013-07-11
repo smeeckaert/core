@@ -113,6 +113,7 @@ class FrontCache
 
     public function __construct($path = false)
     {
+        $path = \File::validOSPath($path);
         if ($path == false) {
             $this->_path = false;
         } else {
@@ -371,8 +372,22 @@ class FrontCache
         }
     }
 
+    public static function deleteDir($path)
+    {
+        try {
+            \File::delete_dir(\Config::get('cache_dir').$path, true, true);
+        } catch (\Exception $e) {
+        }
+    }
+
     public function get_path()
     {
         return $this->_path;
+    }
+
+    public static function getPathFromUrl($base, $url)
+    {
+        $url = (empty($url) ? 'index/' : $url);
+        return 'pages'.DS.str_replace(array('http://', 'https://', '/'), array('', '', '_'), rtrim($base, '/')).DS.rtrim($url, '/');
     }
 }

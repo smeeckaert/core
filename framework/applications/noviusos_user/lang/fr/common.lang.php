@@ -1,17 +1,13 @@
 <?php
 
-// Generated on 17/04/2013 14:49:11
+// Generated on 05/07/2013 14:57:58
 
 // 56 out of 56 messages are translated (100%).
 // 246 out of 246 words are translated (100%).
 
 return array(
-    #: classes/controller/admin/user.ctrl.php:51
+    #: classes/controller/admin/user.ctrl.php:70
     'Done, your password has been changed.' => 'Voilà, votre mot de passe a été changé.',
-
-    #: classes/controller/admin/user.ctrl.php:134
-    #: classes/controller/admin/role.ctrl.php:25
-    'OK, permissions saved.' => 'OK, droits enregistrés.',
 
     #: classes/controller/admin/account.ctrl.php:84
     'Your Novius OS has switched to {{language}}. Okay, not quite. Actually it needs a <a>quick refresh</a>.' => 'Votre Novius OS est passé à {{language}}. Enfin presque. Il ne vous manque plus qu’<a>actualiser</a>.',
@@ -34,6 +30,9 @@ return array(
     #: classes/controller/admin/account.ctrl.php:140
     'Something went wrong. Please refresh your browser window and try again. Contact your developer or Novius OS if the problem persists. We apologise for the inconvenience caused.' => 'Quelque chose n’a pas bien marché. Merci d’actualiser la fenêtre de votrenavigateur et d’essayer à nouveau. Contactez votre développeur ou Novius OSsi le problème persiste. Nos excuses pour le désagrément occasionné.',
 
+    #: classes/controller/admin/role.ctrl.php:29
+    'OK, permissions saved.' => 'OK, droits enregistrés.',
+
     #: views/admin/user_details_edit.view.php:29
     'Details' => 'Propriétés',
 
@@ -51,41 +50,41 @@ return array(
     'Permissions' => 'Droits d’accès',
 
     #. Password strength
-    #: views/admin/user_edit.view.php:93
-    #: views/admin/account.view.php:94
+    #: views/admin/user_edit.view.php:91
+    #: views/admin/account.view.php:95
     #: views/admin/user_add.view.php:75
     'Insufficient' => 'Insuffisant',
 
-    #: views/admin/user_edit.view.php:94
-    #: views/admin/account.view.php:95
+    #: views/admin/user_edit.view.php:92
+    #: views/admin/account.view.php:96
     #: views/admin/user_add.view.php:76
     'Weak' => 'Faible',
 
-    #: views/admin/user_edit.view.php:95
-    #: views/admin/account.view.php:96
+    #: views/admin/user_edit.view.php:93
+    #: views/admin/account.view.php:97
     #: views/admin/user_add.view.php:77
     'Average' => 'Dans la moyenne',
 
-    #: views/admin/user_edit.view.php:96
-    #: views/admin/account.view.php:97
+    #: views/admin/user_edit.view.php:94
+    #: views/admin/account.view.php:98
     #: views/admin/user_add.view.php:78
     'Strong' => 'Fort',
 
-    #: views/admin/user_edit.view.php:97
-    #: views/admin/account.view.php:98
+    #: views/admin/user_edit.view.php:95
+    #: views/admin/account.view.php:99
     #: views/admin/user_add.view.php:79
     'Outstanding' => 'Excellent',
 
-    #: views/admin/user_roles_edit.view.php:33
+    #: views/admin/user_roles_edit.view.php:35
     'View and edit permissions' => 'Voir et modifier les permissions',
 
-    #: views/admin/account.view.php:29
+    #: views/admin/account.view.php:30
     'Sign out (see you!)' => 'Se déconnecter (à bientôt&nbsp;!)',
 
-    #: views/admin/account.view.php:41
+    #: views/admin/account.view.php:42
     'My account' => 'Mon compte',
 
-    #: views/admin/account.view.php:42
+    #: views/admin/account.view.php:43
     'Theme' => 'Thème',
 
     #: config/controller/admin/user.config.php:19

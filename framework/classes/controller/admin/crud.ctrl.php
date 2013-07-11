@@ -72,14 +72,20 @@ class Controller_Admin_Crud extends Controller_Admin_Application
             }
         }
 
-        $this->config['views']['insert'] = !empty($this->config['views']['insert']) ? $this->config['views']['insert'] : $this->config['views']['form'];
-        $this->config['views']['update'] = !empty($this->config['views']['update']) ? $this->config['views']['update'] : $this->config['views']['form'];
-
-        if (empty($this->config['layout_insert']) && !empty($this->config['layout'])) {
-            $this->config['layout_insert'] = $this->config['layout'];
-        }
-        if (empty($this->config['layout_update']) && !empty($this->config['layout'])) {
-            $this->config['layout_update'] = $this->config['layout'];
+        // Convert simplified layout syntax into the full syntax
+        foreach (array('layout', 'layout_insert', 'layout_update') as $layout_name) {
+            if (!empty($this->config[$layout_name])) {
+                $layout = $this->config[$layout_name];
+                $view = current($layout);
+                if (!is_array($view) || empty($view['view'])) {
+                    $this->config[$layout_name] = array(
+                        array(
+                            'view' => 'nos::form/layout_standard',
+                            'params' =>  $layout,
+                        ),
+                    );
+                }
+            }
         }
 
         $this->behaviours = array(
@@ -101,6 +107,17 @@ class Controller_Admin_Crud extends Controller_Admin_Application
         $common_config = \Nos\Config_Common::load($model, array());
         $i18n_default = \Config::load('nos::i18n_common', true);
         $this->config['i18n'] = array_merge($i18n_default, \Arr::get($common_config, 'i18n', array()));
+
+        $model::eventStatic('crudConfig', array(&$this->config, $this));
+
+        foreach (array('insert', 'update') as $layout_suffix) {
+            if (empty($this->config['views'][$layout_suffix])) {
+                $this->config['views'][$layout_suffix] = $this->config['views']['form'];
+            }
+            if (empty($this->config['layout_'.$layout_suffix]) && !empty($this->config['layout'])) {
+                $this->config['layout_'.$layout_suffix] = $this->config['layout'];
+            }
+        }
     }
 
     /**
@@ -137,7 +154,7 @@ class Controller_Admin_Crud extends Controller_Admin_Application
                 'is_new' => $this->is_new,
                 'actions' => array_values($this->get_actions()),
                 'dataset' => \Nos\Controller::dataset_item($this->item),
-                'tab_params' => $this->get_tab_params(),
+                'tab_params' => $this->get_tab_params()
             ),
             'item' => $this->item,
         );
@@ -172,6 +189,10 @@ class Controller_Admin_Crud extends Controller_Admin_Application
         $fieldset = \Fieldset::build_from_config($fields, $this->item, $this->build_from_config());
         $fieldset = $this->fieldset($fieldset);
 
+        if (isset($this->config['css'])) {
+            $fieldset->prepend(render('nos::admin/load_css', array('css_files' => $this->config['css'])));
+        }
+
         $view_params = $this->view_params();
         $view_params['fieldset'] = $fieldset;
 
@@ -201,7 +222,9 @@ class Controller_Admin_Crud extends Controller_Admin_Application
             $this->item->{$this->config['environment_relation']->key_from[0]} = $this->item_environment->{$this->config['environment_relation']->key_to[0]};
         }
         if ($this->behaviours['contextable']) {
-            $this->item->{$this->behaviours['contextable']['context_property']} = \Input::get('context', false) ? : key(Tools_Context::contexts());
+            $context = \Input::get('context', false);
+            $allowed_contexts = \Nos\User\Permission::contexts();
+            $this->item->{$this->behaviours['contextable']['context_property']} = $context && isset($allowed_contexts[$context]) ? $context : key($allowed_contexts);
         }
         if ($this->behaviours['twinnable'] && $this->behaviours['tree']) {
             // New page: no parent
@@ -243,69 +266,10 @@ class Controller_Admin_Crud extends Controller_Admin_Application
                 ),
             );
         }
-        if ($this->behaviours['contextable']) {
-            $fields = \Arr::merge(
-                $fields,
-                array(
-                    $this->behaviours['contextable']['context_property'] => array(
-                        'form' => array(
-                            'type' => 'hidden',
-                            'value' => $this->item->{$this->behaviours['contextable']['context_property']},
-                            'class' => 'input-context',
-                        ),
-                    ),
-                )
-            );
-        }
-        if ($this->behaviours['twinnable']) {
-            $fields = \Arr::merge(
-                $fields,
-                array(
-                    $this->behaviours['twinnable']['common_id_property'] => array(
-                        'form' => array(
-                            'type' => 'hidden',
-                            'value' => $this->item->{$this->behaviours['twinnable']['common_id_property']},
-                        ),
-                    ),
-                )
-            );
+        $model = $this->config['model'];
+        $model::eventStatic('crudFields', array(&$fields, $this));
 
-            if (count($this->behaviours['twinnable']['invariant_fields']) > 0 &&
-                ((!$this->is_new && count($contexts = $this->item->get_other_context()) > 1) ||
-                ($this->is_new && !empty($this->item_from)))) {
-                if ($this->is_new) {
-                    $contexts = $this->item_from->get_all_context();
-                }
-                $context_labels = array();
-                foreach ($contexts as $context) {
-                    $context_labels[] = Tools_Context::contextLabel($context);
-                }
-                $context_labels = htmlspecialchars(\Format::forge($context_labels)->to_json());
-
-                foreach ($fields as $key => $field) {
-                    if (in_array($key, $this->behaviours['twinnable']['invariant_fields'])) {
-                        $fields[$key]['form']['disabled'] = true;
-                        $fields[$key]['form']['context_invariant_field'] = true;
-                        $fields[$key]['form']['data-other-contexts'] = $context_labels;
-                    }
-                }
-            }
-        }
         if ($this->is_new) {
-            if ($this->behaviours['contextable'] && $this->behaviours['tree']) {
-                $parent_id = $this->item->parent_relation()->key_from[0];
-                $fields = \Arr::merge(
-                    $fields,
-                    array(
-                        $parent_id => array(
-                            'renderer_options' => array(
-                                'context' => $this->item->{$this->behaviours['contextable']['context_property']},
-                            ),
-                        ),
-                    )
-                );
-            }
-
             $fields = \Arr::merge(
                 $fields,
                 array(
@@ -395,6 +359,7 @@ class Controller_Admin_Crud extends Controller_Admin_Application
      */
     public function before_save($item, $data)
     {
+        $this->checkPermission($this->is_new ? 'add' : 'edit');
         if ($this->behaviours['twinnable'] && $this->is_new) {
 
             $item_context = $this->item->get_context();
@@ -551,19 +516,13 @@ class Controller_Admin_Crud extends Controller_Admin_Application
      */
     protected function get_actions($all_targets = false)
     {
-        $actions = array();
-        $translate_action_content = $this->get_actions_context();
-        if ($translate_action_content !== false) {
-            $actions[$this->config['model'].'.translate'] = $translate_action_content;
-        }
         $actions = array_merge(
-            $actions,
             \Config::actions(array(
                 'models' => array(get_class($this->item)),
                 'target' => 'toolbar-edit',
                 'class' => get_called_class(),
                 'item' => $this->item,
-                'all_targets' => $all_targets
+                'all_targets' => $all_targets,
             )),
             \Nos\Config_Common::prefixActions($this->config['actions'], $this->config['model'])
         );
@@ -572,87 +531,11 @@ class Controller_Admin_Crud extends Controller_Admin_Application
     }
 
     /**
-     * get standard actions to translate an item
-     * @return type
-     */
-    protected function get_actions_context()
-    {
-        $contexts = array_keys(Tools_Context::contexts());
-
-        if (!$this->behaviours['twinnable'] || $this->is_new || count($contexts) == 1) {
-            return false;
-        }
-
-        $actions = array();
-
-        $sites = Tools_Context::sites();
-        $locales = Tools_Context::locales();
-
-        $main_context = $this->item->find_main_context();
-        foreach ($contexts as $context) {
-            if ($this->item->{$this->behaviours['twinnable']['context_property']} === $context) {
-                continue;
-            }
-            $item_context = $this->item->find_context($context);
-            $url = $this->config['controller_url'].'/insert_update'.(empty($item_context) ? (empty($main_context) ? '' : '/'.$main_context->id).'?context='.$context : '/'.$item_context->id);
-            if (empty($item_context)) {
-                if (count($sites) === 1) {
-                    $label = __('Translate into {{context}}');
-                } elseif (count($locales) === 1) {
-                    $label = __('Add to {{context}}');
-                } else {
-                    if (Tools_Context::localeCode($context) === Tools_Context::localeCode($this->item->get_context())) {
-                        $label = __('Add to {{context}}');
-                    } else {
-                        $label = __('Translate into {{context}}');
-                    }
-                }
-            } else {
-                $label = __('Edit {{context}}');
-            }
-            $label = strtr($label, array('{{context}}' => Tools_Context::contextLabel($context)));
-            $actions[] = array(
-                'content' => $label,
-                'action' => array(
-                    'action' => 'nosTabs',
-                    'method' => empty($main_context) ? 'add' : 'open',
-                    'tab' => array(
-                        'url' => $url,
-                    ),
-                ),
-            );
-        }
-
-        if (count($sites) === 1) {
-            // Note to translator: action (button)
-            $label = __('Translate');
-        } elseif (count($locales) === 1) {
-            $label = __('Add to another site');
-        } else {
-            $label = __('Translate / Add to another site');
-        }
-
-        return array(
-                'label' => $label,
-                'menu' => array(
-                    'options' => array(
-                        'orientation' => 'vertical',
-                        'direction' => 'rtl',
-                    ),
-                    'menus' => $actions,
-                ),
-                'icons' => array(
-                    'secondary' => 'triangle-1-s',
-                ),
-        );
-    }
-
-    /**
      * @deprecated
      */
     protected function check_permission($action_name)
     {
-        logger(\Fuel::L_WARNING, '\Nos\Controller_Admin_Crud->check_permission($action_name) is deprecated. Please use \Nos\Controller_Admin_Crud->checkPermission($action_name).');
+        \Log::deprecated('->check_permission($action_name) is deprecated, use ->checkPermission($action_name) instead.', 'Chiba.1');
 
         return $this->checkPermission($action_name);
     }
@@ -678,7 +561,7 @@ class Controller_Admin_Crud extends Controller_Admin_Application
 
         if ($disabled !== false) {
             if (!is_string($disabled)) {
-                $disabled = __('You cannot carry out this action, it has been disabled. Ask your colleagues to find out why.');
+                $disabled = $this->config['i18n']['action not allowed'];
             }
             $this->send_error(new \Exception($disabled));
         }
@@ -733,7 +616,8 @@ class Controller_Admin_Crud extends Controller_Admin_Application
             $dispatchEvent['id'] = array();
             $dispatchEvent['context'] = array();
 
-            $contexts = \Input::post('contexts', array());
+            // Filter allowed contexts
+            $contexts = array_intersect(array_keys(\Nos\User\Permission::contexts()), \Input::post('contexts', array()));
             $contexts_item = $this->item->get_all_context();
 
             $count_1 = count($contexts);

@@ -10,7 +10,8 @@ define('jquery-nos-ostabs',
     ['jquery', 'jquery-nos', 'jquery-ui.widget', 'jquery-nos-loadspinner', 'jquery-ui.sortable', 'wijmo.wijsuperpanel', 'wijmo.wijmenu', 'modernizr'],
     function( $ ) {
         "use strict";
-        var undefined = void(0);
+        var undefined = void(0),
+            touchDevice = Modernizr.touch;
 
         $.widget( "nos.ostabs", {
             options: {
@@ -125,7 +126,7 @@ define('jquery-nos-ostabs',
 
                 // initialization from scratch
                 if ( init ) {
-                    self.element.addClass('nos-ostabs ui-widget ui-widget-content' + (Modernizr.touch ? ' nos-ostabs-touch' : ''));
+                    self.element.addClass('nos-ostabs ui-widget ui-widget-content' + (touchDevice ? ' nos-ostabs-touch' : ''));
 
                     self.uiOstabsHeader = $( '<div></div>' )
                         .addClass( 'nos-ostabs-header' )
@@ -612,7 +613,6 @@ define('jquery-nos-ostabs',
                     li = self.lis.eq(index),
                     a =  self.anchors.eq(index),
                     closable = li.not( '.nos-ostabs-appstab' ).length,
-                    reloadable = a.data( "iframe.tabs"),
                     actions = [], $action_bar, $links;
 
                 $panel.find('.nos-ostabs-actions').remove();
@@ -621,7 +621,7 @@ define('jquery-nos-ostabs',
                     .addClass( 'nos-ostabs-actions ui-state-active' )
                     .prependTo( $panel );
 
-                if (!Modernizr.touch && !closable) {
+                if (!touchDevice && !closable) {
                     return;
                 }
 
@@ -655,7 +655,7 @@ define('jquery-nos-ostabs',
                         });
                 }
 
-                if (!Modernizr.touch || !closable) {
+                if (!touchDevice || !closable) {
                     actions.push({
                         classes: 'nos-ostabs-close-all',
                         click: function() {
@@ -672,14 +672,12 @@ define('jquery-nos-ostabs',
                     });
                 }
 
-                if ( reloadable ) {
+                if (closable)  {
                     actions.push({
                         classes: 'nos-ostabs-reload',
                         click: function() {
-                            var fr = $panel.find( 'iframe.nos-ostabs-panel-content' );
-                            if (fr !== undefined) {
-                                fr.attr("src", fr.attr("src"));
-                            }
+                            var index = self.lis.index(li);
+                            self.reload(index);
                             return false;
                         },
                         label: o.texts.reloadTab,
@@ -689,7 +687,7 @@ define('jquery-nos-ostabs',
                 }
 
 
-                if (Modernizr.touch) {
+                if (touchDevice) {
                     $links = $( '<div></div>' )
                         .addClass( 'nos-ostabs-actions-links' )
                         .prependTo( $action_bar );
@@ -829,14 +827,19 @@ define('jquery-nos-ostabs',
             },
 
             add: function( tab, index ) {
-                var self = this;
+                var self = this,
+                    o = self.options;
 
                 if ( !$.isPlainObject(tab) || tab.url === undefined ) {
                     return false;
                 }
 
                 if ( index === undefined ) {
-                    index = self.anchors.length - 1;
+                    if ($(self.lis.get(o.selected)).hasClass('nos-ostabs-appstab')) {
+                        index = self.anchors.length - 1;
+                    } else {
+                        index = o.selected + 1;
+                    }
                 }
 
                 var $li = self._add(tab);
@@ -896,7 +899,7 @@ define('jquery-nos-ostabs',
                 icon = self._icon( tab ).appendTo( a );
 
                 label = $( '<span></span>' ).addClass( 'nos-ostabs-label' )
-                    .html( tab.label ? tab.label : 'New tab' )
+                    .html( tab.label ? tab.label.replace(/</g, '&lt;') : 'New tab' )
                     .appendTo( a );
                 if ( !tab.labelDisplay ) {
                     label.hide();
@@ -907,7 +910,7 @@ define('jquery-nos-ostabs',
                     .data( 'ui-ostab', tab )
                     .appendTo( target );
 
-                if (!Modernizr.touch && !notClosable) {
+                if (!touchDevice && !notClosable) {
                     $('<span><span></span></span>').addClass('nos-ostabs-closetab')
                         .attr('title', o.texts.closeTab)
                         .click(function(e) {
@@ -1005,10 +1008,10 @@ define('jquery-nos-ostabs',
                 if ( title === undefined ) {
                     return $li.find( '.nos-ostabs-label' ).text();
                 } else {
-                    $li.find( '.nos-ostabs-label' ).html( title );
+                    $li.find( '.nos-ostabs-label' ).html( title.replace(/</g, '&lt;') );
 
                     if ( o.selected == index ) {
-                        $( 'title' ).html( title );
+                        $( 'title' ).html( title.replace(/</g, '&lt;') );
                     }
 
                     self._trigger( "title", null, self._ui( $li[ 0 ] ) );
@@ -1038,7 +1041,7 @@ define('jquery-nos-ostabs',
                     this.select(index);
                 } else {
                     if ( self.options.selected == index ) {
-                        $( 'title' ).html( tab.label );
+                        $( 'title' ).html( tab.label.replace(/</g, '&lt;') );
                         var url = encodeURIComponent(tab.url).replace(/%2F/g, '/');
                         if ('replaceState' in window.history) {
                             window.history.replaceState({}, '', document.location.pathname + '?tab=' + url);
@@ -1060,7 +1063,8 @@ define('jquery-nos-ostabs',
                         })
                         .find('a')
                         .empty()
-                        .append($newA.children());
+                        .append($newA.children())
+                        .data("href.tabs", tab.url );
 
                     self._actions($panel, index);
 
@@ -1141,6 +1145,7 @@ define('jquery-nos-ostabs',
                 if (!iframe) {
                     self.xhr = $.ajax({
                         url: url,
+                        cache: false,
                         success: function( r, s, xhr ) {
                             var json;
 
@@ -1183,6 +1188,82 @@ define('jquery-nos-ostabs',
                         .prependTo( panel.data('callbacks.ostabs', {}) );
 
                     $.data( a, "cache.tabs", true );
+                }
+
+                // last, so that load event is fired before show...
+                self.element.dequeue( "tabs" );
+
+                return self;
+            },
+
+            reload: function( index ) {
+                var self = this;
+                index = self._getIndex( index );
+                var o = self.options,
+                    a = self.anchors.eq( index )[ 0 ],
+                    url = $.data( a, "load.tabs" ),
+                    iframe = $.data( a, "iframe.tabs"),
+                    $frame, $panel;
+
+                self.select(index);
+                self._abort();
+
+                // not remote or from cache
+                if ( (!url && iframe) || self.element.queue( "tabs" ).length !== 0 && $.data( a, "cache.tabs" ) ) {
+                    self.element.dequeue( "tabs" );
+                    return;
+                }
+
+                $panel = self.element.find( self._sanitizeSelector( $(a).data('anchor.tabs') ));
+
+                // load remote from here on
+                self.lis.eq( index ).addClass( "ui-state-processing" );
+
+                if ( $.isFunction($.fn.loadspinner) ) {
+                    $( "span.nos-ostabs-icon", a ).each(function() {
+                        var $a = $( this );
+                        $a.addClass( 'ui-state-processing' )
+                            .loadspinner({
+                                diameter : $a.width(),
+                                scaling : true
+                            });
+                    });
+                }
+
+                if (!iframe) {
+                    self.xhr = $.ajax({
+                        url: url,
+                        cache: false,
+                        success: function( r, s, xhr ) {
+                            var json;
+
+                            $panel.find('.nos-ostabs-panel-content')
+                                .html( r );
+
+                            // case error, response not html but json (tab item was deleted)
+                            // If response looks like JSON, execute standard success callback
+                            try {
+                                json = $.parseJSON(xhr.responseText);
+                                self.element.nosAjaxSuccess(json);
+
+                            } catch (e) {}
+                        },
+                        complete: function(xhr) {
+                            // take care of tab labels
+                            self._cleanup();
+
+                            self._trigger( "load", null, self._ui( self.lis[index] ) );
+                        },
+                        error : function (xhr, s) {
+                            self.remove(index)
+
+                            // If response looks like JSON, execute standard success callback
+                            self.element.nosAjaxError(xhr, s);
+                        }
+                    });
+                } else {
+                    $frame = $panel.find('iframe.nos-ostabs-panel-content');
+                    $frame.attr("src", $frame.attr("src"));
                 }
 
                 // last, so that load event is fired before show...

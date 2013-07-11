@@ -209,8 +209,12 @@ class Application
         $i18n_file = \Arr::get($metadata, 'i18n_file', false);
         $name = isset($metadata['name']) ? $metadata['name'] : $this->folder;
         if (!empty($i18n_file)) {
-            $i18n = \Nos\I18n::dictionary($i18n_file);
-            $name = $i18n($name);
+            try {
+                $i18n = \Nos\I18n::dictionary($i18n_file);
+                $name = $i18n($name);
+            } catch (\Fuel\Core\ModuleNotFoundException $e) {
+                // App not found: don't translate
+            }
         }
 
         return $name;
@@ -397,12 +401,10 @@ class Application
         }
 
         // Cache the metadata used to install the application
-        if ($this->folder != 'local') {
-            $config['app_installed'] = static::$rawAppInstalled;
-            $config['app_installed'][$this->folder] = $new_metadata;
-            $this->save_config($config);
-            static::$rawAppInstalled = $config['app_installed'];
-        }
+        $config['app_installed'] = static::$rawAppInstalled;
+        $config['app_installed'][$this->folder] = $new_metadata;
+        $this->save_config($config);
+        static::$rawAppInstalled = $config['app_installed'];
 
         if ($this->folder == 'local') {
             \Migrate::latest('default', 'app');
@@ -589,36 +591,13 @@ class Application
             $private = static::get_application_path($this->folder).DS.$folder;
             if (is_dir($private)) {
                 $public = DOCROOT.$folder.DS.'apps'.DS.$this->folder;
-                if (is_link($public)) {
+                if (\File::is_link($public)) {
                     unlink($public);
                 }
 
-                // It seems that symlink() does not work every time (confs, right?)
-                // Several trials with native version and exec(), in relative and absolute
-                // http://forums.novius-os.org/support-forums/contributions/petit-probleme,feed,98.html
-
-                $dirname = dirname($public);
-                $relative = Tools_File::relativePath($dirname, $private);
-                if (symlink($relative, $public)) {
-                    return true;
+                if (!\File::relativeSymlink($private, $public)) {
+                    throw new \Exception('Can\'t create symlink for "'.$folder.DS.'apps'.DS.$this->folder.'"');
                 }
-
-                exec('cd '.$dirname.'; ln -s '.$relative.' '.$this->folder);
-                if (is_link($public)) {
-                    return true;
-                }
-
-                if (symlink($private, $public)) {
-                    return true;
-                }
-
-                exec('cd '.$dirname.'; ln -s '.$private.' '.$this->folder);
-                if (is_link($public)) {
-                    return true;
-                }
-
-                \Log::error('cd '.$dirname.'; ln -s '.$private.' '.$this->folder);
-                throw new \Exception('Can\'t create symlink for "'.$folder.DS.'apps'.DS.$this->folder.'"');
             }
         }
 
@@ -629,6 +608,7 @@ class Application
     {
         $public = DOCROOT.$folder.DS.'apps'.DS.$this->folder;
         if (is_link($public) || file_exists($public)) {
+            // Warning: calling File::delete() here solves the symlink and try to delete the destination folder (which does not work, because it's not a file)
             return unlink($public);
         }
 
@@ -640,18 +620,57 @@ class Application
         $private =  static::get_application_path($this->folder).DS.$folder;
         $public = DOCROOT.$folder.DS.'apps'.DS.$this->folder;
         if (file_exists($private)) {
-            return is_link($public) && in_array(readlink($public), array(
+            return \File::is_link($public) && in_array(readlink($public), array(
                 $private,
                 Tools_File::relativePath(dirname($public), $private)
             ));
         }
 
-        return !is_link($public);
+        return !\File::is_link($public);
     }
 
     public function addPermission()
     {
-        User\Permission::add('nos::access', $this->folder);
+        $user = \Session::user();
+        // If no user is connected, can't do
+        if (empty($user)) {
+            return;
+        }
+
+        // Multi-roles: create a role dedicated to this application if needed
+        if (\Config::get('novius-os.users.enable_roles', false)) {
+            $permission = \Nos\User\Model_Permission::find('first', array(
+                'where' => array(
+                    array('perm_name', 'nos::access'),
+                    array('perm_category_key', $this->folder),
+                ),
+            ));
+            // No already exists: skip
+            if (!empty($permission)) {
+                return;
+            }
+
+            // No permission exists yet: create dedicated to this application
+            $role = \Nos\User\Model_Role::forge(array(
+                'role_name' => $this->get_name(),
+                'role_user_id' => 0,
+            ));
+            $role->save();
+            $user->roles[] = $role;
+            $user->save();
+        } else {
+            $role = reset($user->roles);
+        }
+
+        // Try-catch to handle duplicate...
+        try {
+            $access = new \Nos\User\Model_Permission();
+            $access->perm_role_id      = $role->role_id;
+            $access->perm_name         = 'nos::access';
+            $access->perm_category_key = $this->folder;
+            $access->save();
+        } catch (\Exception $e) {
+        }
     }
 
     public function __get($property)

@@ -1,12 +1,12 @@
 <?php
 
-// Generated on 24/04/2013 17:47:52
+// Generated on 05/07/2013 14:57:58
 
 // 56 out of 56 messages are translated (100%).
 // 246 out of 246 words are translated (100%).
 
 return array(
-    #: classes/controller/admin/user.ctrl.php:51
+    #: classes/controller/admin/user.ctrl.php:70
     'Done, your password has been changed.' => 'はい、パスワードが変更されました。',
 
     #: classes/controller/admin/account.ctrl.php:84
@@ -75,7 +75,7 @@ return array(
     #: views/admin/user_add.view.php:79
     'Outstanding' => '最良',
 
-    #: views/admin/user_roles_edit.view.php:33
+    #: views/admin/user_roles_edit.view.php:35
     'View and edit permissions' => 'パーミッションを閲覧／編集',
 
     #: views/admin/account.view.php:30

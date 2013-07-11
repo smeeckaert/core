@@ -8,7 +8,7 @@
  */
 
 define('jquery-nos-appdesk',
-    ['jquery', 'jquery-nos', 'jquery-ui.widget', 'jquery-nos-thumbnailsgrid', 'jquery-nos-listgrid', 'jquery-nos-treegrid', 'jquery-nos-preview', 'jquery-ui.button', 'wijmo.wijdropdown', 'wijmo.wijtabs', 'wijmo.wijsuperpanel', 'wijmo.wijsplitter', 'wijmo.wijgrid', 'wijmo.wijmenu'],
+    ['jquery', 'jquery-nos', 'jquery-ui.widget', 'jquery-nos-thumbnailsgrid', 'jquery-nos-listgrid', 'jquery-nos-treegrid', 'jquery-nos-preview', 'jquery-ui.button', 'wijmo.wijtabs', 'wijmo.wijsuperpanel', 'wijmo.wijsplitter', 'wijmo.wijgrid', 'wijmo.wijmenu'],
     function($) {
         "use strict";
         var undefined = void(0);
@@ -239,7 +239,7 @@ define('jquery-nos-appdesk',
                     if (button.primary) {
                         $el = $('<button></button>').html(button.label)
                             .data('icon', button.icon || 'plus')
-                            .addClass('primary')
+                            .addClass('ui-priority-primary')
                             .click(function(e) {
                                 e.preventDefault();
                                 e.stopImmediatePropagation();
@@ -317,6 +317,11 @@ define('jquery-nos-appdesk',
                                     self.uiToolbarContextsDialog.find(':checked').each(function() {
                                         o.selectedContexts.push($(this).val());
                                     });
+                                    if (o.selectedContexts.length === 0) {
+                                        self.uiToolbarContextsDialog.find(':checkbox').each(function() {
+                                            o.selectedContexts.push($(this).val());
+                                        });
+                                    }
 
                                     self._selectContexts();
                                 }
@@ -332,11 +337,10 @@ define('jquery-nos-appdesk',
                         modal: true,
                         open: function() {
                             self.uiToolbarContextsDialog.nosOnShow('show');
-                            self.uiToolbarContextsDialog.find(':checkbox').attr('checked', false);
+                            self.uiToolbarContextsDialog.find(':checkbox').prop('checked', false);
                             $.each(o.selectedContexts, function(i, context) {
-                                self.uiToolbarContextsDialog.find(':checkbox[value="' + context + '"]').attr('checked', true);
+                                self.uiToolbarContextsDialog.find(':checkbox[value="' + context + '"]').prop('checked', true);
                             });
-                            self.uiToolbarContextsDialog.find(':checkbox').wijcheckbox('refresh');
                             self.uiToolbarContextsDialog.wijdialog('option', 'width', parseInt(self.uiToolbarContextsDialog.css('padding-left').replace('px')) * 2 + $table.outerWidth());
                         }
                     })
@@ -375,8 +379,7 @@ define('jquery-nos-appdesk',
                                                 if (checked === null) {
                                                     checked = $checkbox.is(':checked');
                                                 }
-                                                $checkbox.attr('checked', !checked)
-                                                    .wijcheckbox('refresh');
+                                                $checkbox.prop('checked', !checked);
                                             }
                                         });
 
@@ -388,8 +391,7 @@ define('jquery-nos-appdesk',
                                         e.stopImmediatePropagation();
 
                                         var $checkbox = $tr.find(':checkbox');
-                                        $checkbox.attr('checked', !$checkbox.is(':checked'))
-                                            .wijcheckbox('refresh');
+                                        $checkbox.prop('checked', !$checkbox.is(':checked'));
                                     });
                                 }
                             }
@@ -610,11 +612,8 @@ define('jquery-nos-appdesk',
 
                     views_count++;
                     $viewsDropDown.append(
-                        $('<option></option>')
-                            .attr({
-                                'value': key,
-                                'selected': (o.selectedView == key)
-                            })
+                        $('<option></option>').attr('value', key)
+                            .prop('selected', o.selectedView == key)
                             .append(view.name)
                     );
                 });
@@ -801,7 +800,7 @@ define('jquery-nos-appdesk',
 
                 if ($.isFunction(inspector.url)) {
                     inspector.url.call(self, $li);
-                } else {
+                } else if (inspector.url) {
                     $.ajax({
                         url: inspector.url,
                         dataType: 'html'
@@ -814,6 +813,8 @@ define('jquery-nos-appdesk',
                         log(textStatus);
                         log(errorThrown);
                     });
+                } else {
+                    $li.html(inspector.view);
                 }
 
                 return self;
@@ -1134,6 +1135,7 @@ define('jquery-nos-appdesk',
                         treeOptions : {
                             context : o.selectedContexts || ''
                         },
+                        initialDepth : o.treeGrid.initialDepth || 2,
                         columnsAutogenerationMode : 'none',
                         selectionMode: 'singleRow',
                         allowSorting: true,
@@ -1531,6 +1533,20 @@ define('jquery-nos-appdesk',
                                 }
                             },
 
+                            myHtmlspecialcharsParser = {
+                                parseDOM: function (value, culture, format, nullString) {
+                                    return this.parse(value.innerHTML, culture, format, nullString);
+                                },
+                                parse: function (value, culture, format, nullString) {
+                                    if (value === null) return nullString;
+                                    return (value + '').replace(/&lt;/g, '<');
+                                },
+                                toStr: function (value, culture, format, nullString) {
+                                    if (value === null) return nullString;
+                                    return (value + '').replace(/</g, '&lt;');
+                                }
+                            },
+
                             recursive = function(object) {
                                 $.each(object, function(key, val) {
                                     var i, nosContext,
@@ -1672,22 +1688,35 @@ define('jquery-nos-appdesk',
                                                                             break;
 
                                                                         case 'link':
-                                                                            args.$container.wrapInner(
-                                                                                $('<a href="#"></a>')
-                                                                                    .click(function(e) {
-                                                                                        e.preventDefault();
-                                                                                        if (formatter.action === 'default' && actions.length && actions[0].action) {
-                                                                                            formatter.action = actions[0].action;
-                                                                                        }
-                                                                                        if (formatter.action && $.type(formatter.action) !== 'object' && appdesk.actions && appdesk.actions[formatter.action]) {
-                                                                                            formatter.action = appdesk.actions[formatter.action].action;
-                                                                                        }
-                                                                                        if ($.type(formatter.action) === 'object') {
+                                                                            if (formatter.action === 'default' && actions.length && actions[0].action) {
+                                                                                formatter.action = actions[0].name;
+                                                                            }
+                                                                            if (formatter.action && $.type(formatter.action) !== 'object' && appdesk.actions && appdesk.actions[formatter.action]) {
+                                                                                formatter._action_name = formatter.action;
+                                                                                formatter.action = appdesk.actions[formatter.action].action;
+                                                                            }
+                                                                            if (formatter._action_name && args.row.data.actions && $.type(args.row.data.actions[formatter._action_name]) === 'string') {
+                                                                                break;
+                                                                            }
+                                                                            if ($.type(formatter.action) === 'object') {
+                                                                                args.$container.wrapInner(
+                                                                                    $('<a href="#"></a>')
+                                                                                        .click(function(e) {
+                                                                                            e.preventDefault();
                                                                                             $(this).nosAction(formatter.action, args.row.data);
-                                                                                        }
-                                                                                    })
-                                                                            )
+                                                                                        })
+                                                                                );
+                                                                            }
                                                                             break;
+
+                                                                        default:
+                                                                            if (typeof formatter.type !== 'undefined') {
+                                                                                require([formatter.type], function(ret) {
+                                                                                    ret.format(formatter, args);
+                                                                                }, function () {
+                                                                                    log('Could not load formatter: ' + formatter.type);
+                                                                                });
+                                                                            }
                                                                     }
                                                                 });
 
@@ -1696,6 +1725,11 @@ define('jquery-nos-appdesk',
                                                         }
                                                     });
                                                 })();
+                                            }
+
+                                            // Add a default htmlspecialchars dataParser
+                                            if (!object[key][i].dataParser && !object[key][i].isSafeHtml && !object[key][i].dataType) {
+                                                object[key][i].dataParser = myHtmlspecialcharsParser;
                                             }
                                         }
                                     }

@@ -41,65 +41,17 @@ return array(
             'targets' => array(
                 'grid' => true,
             ),
-        ),
-        'visualise' => array(
-            'label' => __('Visualise'),
-            'primary' => true,
-            'iconClasses' => 'nos-icon16 nos-icon16-eye',
-            'action' => array(
-                'action' => 'window.open',
-                'url' => '{{preview_url}}?_preview=1',
-            ),
             'disabled' => array(
-            function($item, $params)
-            {
-                if ($item::behaviours('Nos\Orm_Behaviour_Urlenhancer', false)) {
-                    $url = $item->url_canonical(array('preview' => true));
-                    if ($item->is_new()) {
-                        return true;
+                'check_context' => function($item) {
+                    try {
+                        $context = $item->get_context();
+                    } catch (\Exception $e) {
+                        // No context on the item => no permission to check
+                        return false;
                     }
-                    if (!!empty($url)) {
-                        return $params['config']['i18n']['visualising no url'];
-                    }
-
-                    return false;
-                }
-                return true;
-            }),
-            'targets' => array(
-                'grid' => true,
-                'toolbar-edit' => true,
+                    return !in_array($context, array_keys(\Nos\User\Permission::contexts()));
+                },
             ),
-            'visible' => array(
-            function($params) {
-                if (isset($params['item']) && $params['item']::behaviours('Nos\Orm_Behaviour_Urlenhancer', false)) {
-                    $url = $params['item']->url_canonical(array('preview' => true));
-                    return !$params['item']->is_new() && !empty($url);
-                }
-                if (isset($params['model']) && $params['model']::behaviours('Nos\Orm_Behaviour_Urlenhancer', false)) {
-                    return true;
-                }
-                return false;
-            }),
-        ),
-        'share' => array(
-            'label' => __('Share'),
-            'iconClasses' => 'nos-icon16 nos-icon16-share',
-            'action' => array(
-                'action' => 'share',
-                'data' => array(
-                    'model_id' => '{{_id}}',
-                    'model_name' => '{{_model}}',
-                ),
-            ),
-            'targets' => array(
-                'toolbar-edit' => true,
-            ),
-            'visible' => array(
-            function($params) {
-                $model = get_class($params['item']);
-                return !$params['item']->is_new() && $model::behaviours('Nos\Orm_Behaviour_Sharable', false);
-            }),
         ),
         'delete' => array(
             'action' => array(
@@ -117,10 +69,28 @@ return array(
                 'grid' => true,
                 'toolbar-edit' => true,
             ),
+            'align' => 'end',
             'visible' => array(
-            function($params) {
-                return !isset($params['item']) || !$params['item']->is_new();
-            }),
+                'check_is_new' => function($params) {
+                    return !isset($params['item']) || !$params['item']->is_new();
+                },
+            ),
+            'disabled' => array(
+                'check_context' => function($item) {
+                    try {
+                        $context = $item->get_context();
+                    } catch (\Exception $e) {
+                        // No context on the item => no permission to check
+                        return false;
+                    }
+                    return !in_array($context, array_keys(\Nos\User\Permission::contexts()));
+                },
+            ),
+        ),
+    ),
+    'callable_keys' => array(
+        'item' => array(
+            'menu.menus'
         ),
     ),
 );

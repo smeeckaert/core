@@ -176,6 +176,18 @@ class Model_Page extends \Nos\Orm\Model
             'null' => true,
             'convert_empty_to_null' => true,
         ),
+        'page_created_by_id' => array(
+            'default' => null,
+            'data_type' => 'int unsigned',
+            'null' => true,
+            'convert_empty_to_null' => true,
+        ),
+        'page_updated_by_id' => array(
+            'default' => null,
+            'data_type' => 'int unsigned',
+            'null' => true,
+            'convert_empty_to_null' => true,
+        ),
     );
 
     protected static $_has_one = array();
@@ -204,12 +216,10 @@ class Model_Page extends \Nos\Orm\Model
     protected static $_observers = array(
         'Orm\\Observer_Self',
         'Orm\Observer_CreatedAt' => array(
-            'events' => array('before_insert'),
             'mysql_timestamp' => true,
             'property'=>'page_created_at'
         ),
         'Orm\Observer_UpdatedAt' => array(
-            'events' => array('before_save'),
             'mysql_timestamp' => true,
             'property'=>'page_updated_at'
         ),
@@ -217,32 +227,33 @@ class Model_Page extends \Nos\Orm\Model
 
     protected static $_behaviours = array(
         'Nos\Orm_Behaviour_Twinnable' => array(
-            'events' => array('before_insert', 'after_insert', 'before_save', 'after_delete', 'change_parent'),
             'context_property'      => 'page_context',
             'common_id_property' => 'page_context_common_id',
             'is_main_property' => 'page_context_is_main',
-            'invariant_fields'   => array(),
+            'common_fields'   => array(),
         ),
         'Nos\Orm_Behaviour_Tree' => array(
-            'events' => array('before_query', 'before_delete'),
             'parent_relation' => 'parent',
             'children_relation' => 'children',
             'level_property' => 'page_level',
         ),
         'Nos\Orm_Behaviour_Virtualpath' => array(
-            'events' => array('before_save', 'after_save', 'check_change_parent'),
             'virtual_name_property' => 'page_virtual_name',
             'virtual_path_property' => 'page_virtual_url',
             'extension_property' => '.html',
         ),
         'Nos\Orm_Behaviour_Sortable' => array(
-            'events' => array('before_insert', 'before_save', 'after_save'),
             'sort_property' => 'page_sort',
         ),
         'Nos\Orm_Behaviour_Publishable' => array(
             'publication_state_property' => 'page_published',
             'publication_start_property' => 'page_publication_start',
             'publication_end_property' => 'page_publication_end',
+            // Permissions to deny publication is in the config file
+        ),
+        'Nos\Orm_Behaviour_Author' => array(
+            'created_by_property' => 'page_created_by_id',
+            'updated_by_property' => 'page_updated_by_id',
         ),
     );
 
@@ -322,17 +333,7 @@ class Model_Page extends \Nos\Orm\Model
         $url = $this->page_entrance ? '' : ltrim($this->virtual_path(), '/');
         $contexts = \Nos\Tools_Context::contexts();
         foreach ($contexts[$this->page_context] as $context_url) {
-            $host = parse_url($context_url, PHP_URL_HOST);
-            $path = ltrim(parse_url($context_url, PHP_URL_PATH), '/');
-
-            $url = $path.$url;
-            $cache_path = (empty($url) ? 'index/' : $url);
-            // This event mostly redirects, don't trigger it
-            //\Event::trigger_function('front.start', array(array('url' => &$url, 'cache_path' => &$cache_path)));
-            $cache_path = $host.DS.rtrim($cache_path, '/');
-
-            // Delete file
-            $cache = \Nos\FrontCache::forge('pages'.DS.$cache_path);
+            $cache = \Nos\FrontCache::forge(\Nos\FrontCache::getPathFromUrl($context_url, $url));
             $cache->delete();
         }
 
@@ -353,8 +354,7 @@ class Model_Page extends \Nos\Orm\Model
             $host = parse_url($context_url, PHP_URL_HOST);
             $path = trim(parse_url($context_url, PHP_URL_PATH), '/');
 
-            $cache = \Nos\FrontCache::forge('pages'.DS.$host.DS.$path);
-            $cache->delete();
+            \Nos\FrontCache::deleteDir('pages'.DS.$host.DS.$path);
         }
     }
 
@@ -370,38 +370,34 @@ class Model_Page extends \Nos\Orm\Model
         static::_remove_url_enhanced($this->page_id);
         static::_remove_page_enhanced($this->page_id);
 
-        $regexps = array(
-            '`<(\w+)\s[^>]*data-enhancer="([^"]+)" data-config="([^"]+)"[^>]*>.*?</\\1>`u' => 2,
-            '`<(\w+)\s[^>]*data-config="([^"]+)" data-enhancer="([^"]+)"[^>]*>.*?</\\1>`u' => 3,
-        );
-        foreach ($regexps as $regexp => $name_index) {
-            preg_match_all($regexp, $content, $matches);
-            foreach ($matches[$name_index] as $i => $name) {
-                $config = \Nos\Config_Data::get('enhancers.'.$name, false);
+        $page = $this;
+        \Nos\Nos::parse_enhancers(
+            $content,
+            function ($enhancer, $data_config, $tag) use ($page) {
+                $config = \Nos\Config_Data::get('enhancers.'.$enhancer, false);
                 if ($config && !empty($config['urlEnhancer'])) {
                     $url_enhanced = \Nos\Config_Data::get('url_enhanced', array());
-                    $url = $this->page_entrance ? '' : $this->virtual_path(true);
-                    $url_enhanced[$this->page_id] = array(
+                    $url = $page->page_entrance ? '' : $page->virtual_path(true);
+                    $url_enhanced[$page->page_id] = array(
                         'url' => $url,
-                        'context' => $this->page_context,
+                        'context' => $page->page_context,
                     );
                     \Nos\Config_Data::save('url_enhanced', $url_enhanced);
 
                     $page_enhanced = \Nos\Config_Data::get('page_enhanced', array());
-                    $page_enhanced[$name][$this->page_id] = array(
-                        'config' => (array) json_decode(strtr($matches[$name_index === 3 ? 2 : 3][$i], array('&quot;' => '"',))),
-                        'context' => $this->page_context,
-                        'published' => $this->planificationStatus() == 2 ? array(
-                            'start' => $this->publicationStart(),
-                            'end' => $this->publicationEnd(),
-                        ) : $this->published(),
+                    $page_enhanced[$enhancer][$page->page_id] = array(
+                        'config' => (array) json_decode(strtr($data_config, array('&quot;' => '"',))),
+                        'context' => $page->page_context,
+                        'published' => $page->planificationStatus() == 2 ? array(
+                            'start' => $page->publicationStart(),
+                            'end' => $page->publicationEnd(),
+                        ) : $page->published(),
                     );
 
                     \Nos\Config_Data::save('page_enhanced', $page_enhanced);
-                    break 2;
                 }
             }
-        }
+        );
 
         $this->delete_cache();
     }

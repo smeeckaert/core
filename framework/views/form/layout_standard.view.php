@@ -69,7 +69,8 @@ $contexts = array_keys(\Nos\Tools_Context::contexts());
 if (!empty($item) && count($contexts) > 1) {
     $contextable = $item->behaviours('Nos\Orm_Behaviour_Twinnable') !== null || $item->behaviours('Nos\Orm_Behaviour_Contextable') !== null;
     if ($contextable) {
-        if ($item->is_new()) {
+        $allowed_contexts = \Nos\User\Permission::contexts();
+        if ($item->is_new() && count($allowed_contexts) > 1) {
             $flag = \Nos\Tools_Context::flagUrl($item->get_context());
             $site = \Nos\Tools_Context::site($item->get_context());
             ?>
@@ -77,12 +78,12 @@ if (!empty($item) && count($contexts) > 1) {
                 <button class="change-context" type="button"><?= \Nos\Tools_Context::contextLabel($item->get_context(), array('template' => '{site}<br />{locale}', 'short' => true)) ?></button>
                 <ul style="display: none;">
             <?php
-            foreach (\Nos\Tools_Context::contexts() as $context => $domains) {
+            foreach ($allowed_contexts as $context => $domains) {
                 echo '<li data-context="'.e(\Format::forge(array('code' => $context, 'label' => \Nos\Tools_Context::contextLabel($context, array('template' => '{site}<br />{locale}', 'short' => true))))->to_json()).'"><a>'.strtr(__('Add to {{context}}'), array('{{context}}' => \Nos\Tools_Context::contextLabel($context))).'</a></li>';
             }
             ?>
                 </ul>
-            </div>
+            </td>
             <?php
         } else {
             echo '<td style="width:16px;text-align:center;">'.\Nos\Tools_Context::contextLabel($item->get_context(), array('template' => '{site}<br />{locale}', 'short' => true)).'</td>';
@@ -107,8 +108,8 @@ if (!empty($title)) {
         echo ' '.$field
                 ->set_attribute('placeholder', $placeholder)
                 ->set_attribute('title', $placeholder)
-                ->set_attribute('class', $field->get_attribute('class').' title')
-                ->set_template($field->type == 'file' ? '<span class="title">{label} {field}</span>': '{field}')
+                ->set_attribute('class', $field->get_attribute('class').' ui-priority-primary')
+                ->set_template($field->type == 'file' ? '<span class="ui-priority-primary">{label} {field}</span>': '{field}')
                 ->build();
     }
 }
@@ -117,19 +118,13 @@ if (!empty($title)) {
                     </tr>
                 </table>
 <?php
-$publishable = (string) \View::forge('form/publishable', array(
-    'item' => !empty($item) ? $item : null,
-), false);
 
-if (!empty($subtitle) || !empty($publishable)) {
+if (!empty($subtitle)) {
     ?>
                     <div class="line crud_subtitle">
                         <table style="width:100%;">
                             <tr>
     <?php
-    if (!empty($publishable)) {
-        echo $publishable;
-    }
     if (!empty($subtitle)) {
         $fieldset->form()->set_config('field_template', '{label}{required} {field} {error_msg}');
         foreach ((array) $subtitle as $name) {
@@ -161,8 +156,6 @@ if (!empty($subtitle) || !empty($publishable)) {
 ?>
             </div>
         </div>
-        <div class="col c1"></div>
-        <div class="col c3"></div>
         <?= $large ? '' : '<div class="col c1"></div>' ?>
     </div>
 
