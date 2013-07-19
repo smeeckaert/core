@@ -28,6 +28,14 @@ class Orm_Behaviour_Twinnable extends Orm_Behaviour_Contextable
      */
     protected $_properties = array();
 
+    public function __construct($class)
+    {
+        parent::__construct($class);
+        if (!isset($this->_properties['common_fields'])) {
+            $this->_properties['common_fields'] = array();
+        }
+    }
+
     /**
      * Add relations for linked media and wysiwyg shared with other context
      */
@@ -747,5 +755,10 @@ class Orm_Behaviour_Twinnable extends Orm_Behaviour_Contextable
         if ($context_options) {
             $options = array_merge($options, $context_options);
         }
+    }
+
+    public function afterClone(Orm\Model $item)
+    {
+        $item->{$this->_properties['is_main_property']} = false;
     }
 }

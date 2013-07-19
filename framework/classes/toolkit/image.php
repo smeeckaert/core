@@ -290,7 +290,7 @@ class Toolkit_Image
         }
 
         if (!$this->_dirty_url) {
-            return $this->_url;
+            return ($absolute ? \Uri::base(false) : '').$this->_url;
         }
 
         if (count($this->_transformations) === 1 &&
@@ -364,7 +364,7 @@ class Toolkit_Image
             'alt' => $this->_image->title(),
         ), $params);
 
-        return \Html::img($this->url(), $params);
+        return \Html::img(Tools_Url::encodePath($this->url()), $params);
     }
 
     protected function _image()
@@ -391,7 +391,7 @@ class Toolkit_Image
     {
         $image = $this->_image();
 
-        $destination = APPPATH.$this->url();
+        $destination = APPPATH.$this->url(false);
         $dir = dirname($destination);
 
         if (!is_dir($dir)) {

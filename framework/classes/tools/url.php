@@ -59,4 +59,21 @@ class Tools_Url
         }
         return \Uri::base(false);
     }
+
+    /**
+     * Encode the path part of an URL
+     *
+     * @param string $url Url to encode
+     * @return string
+     */
+    public static function encodePath($url)
+    {
+        $parse = parse_url($url);
+        $path = explode('/', $parse['path']);
+        foreach ($path as $i => $segment) {
+            $path[$i] = urlencode($segment);
+        }
+        $parse['path'] = implode('/', $path);
+        return http_build_url($parse);
+    }
 }
