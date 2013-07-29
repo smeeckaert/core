@@ -7,11 +7,10 @@
  *             http://www.gnu.org/licenses/agpl-3.0.html
  * @link http://www.novius-os.org
  */
-?>
-<script type="text/javascript">
-    require(
-        ['jquery-nos-virtualname'],
-        function($) {
-            $("#<?= $id ?>").nosVirtualName(<?= \Format::forge($options)->to_json() ?>);
-        });
-</script>
+
+return array(
+    /**
+     * Temporary directory to store image files in that are being edited.
+     */
+    'temp_dir' => \Config::get('novius-os.temp_dir'),
+);

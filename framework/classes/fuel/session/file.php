@@ -7,11 +7,13 @@
  *             http://www.gnu.org/licenses/agpl-3.0.html
  * @link http://www.novius-os.org
  */
-?>
-<script type="text/javascript">
-    require(
-        ['jquery-nos-virtualname'],
-        function($) {
-            $("#<?= $id ?>").nosVirtualName(<?= \Format::forge($options)->to_json() ?>);
-        });
-</script>
+
+class Session_File extends \Fuel\Core\Session_File
+{
+    public function write()
+    {
+        if (!headers_sent()) {
+            parent::write();
+        }
+    }
+}
