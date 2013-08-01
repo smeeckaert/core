@@ -120,7 +120,14 @@ if (!defined('NOS_ENTRY_POINT')) {
  * Fuel::STAGE
  * Fuel::PRODUCTION
  */
-Fuel::$env = (isset($_SERVER['NOS_ENV']) ? $_SERVER['NOS_ENV'] : (isset($_SERVER['FUEL_ENV']) ? $_SERVER['FUEL_ENV'] : Fuel::DEVELOPMENT));
+// MODIF POUR NOVIUS CLOUD
+#Fuel::$env = (isset($_SERVER['NOS_ENV']) ? $_SERVER['NOS_ENV'] : (isset($_SERVER['FUEL_ENV']) ? $_SERVER['FUEL_ENV'] : Fuel::DEVELOPMENT));
+if (isset($_SERVER['FUEL_ENV'])) {
+    Fuel::$env = $_SERVER['FUEL_ENV'];
+} else {
+    Fuel::$env = Fuel::PRODUCTION;
+}
+// /MODIF POUR NOVIUS CLOUD
 
 //* Register application autoloader
 spl_autoload_register(
