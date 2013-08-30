@@ -51,6 +51,7 @@ class Controller_Inspector_Modeltree extends Controller_Inspector
     public static function process_config($application, $config, $item_actions = array(), $gridKey = 'treeGrid')
     {
         if (!empty($config['model'])) {
+            $config['model'] = substr($config['model'], 0, 1) == '\\' ? substr($config['model'], 1) : $config['model'];
             if (!isset($config['data_mapping'])) {
                 $config['data_mapping'] = null;
             }
@@ -118,7 +119,7 @@ class Controller_Inspector_Modeltree extends Controller_Inspector
                 $config['roots'][0]['order_by'] = $config['order_by'];
             }
 
-            if (!isset($config['input']['query'])) {
+            if (!isset($config['input']['query']) && isset($config['input']['key'])) {
                 $input_key = $config['input']['key'];
                 $config['input']['query'] = function($value, $query) use ($input_key) {
                     //\Debug::dump(isset($_REQUEST['inspectors'][$input_key]) ? $_REQUEST['inspectors'][$input_key] : false, $input_key, $value);

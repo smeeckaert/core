@@ -20,7 +20,7 @@ define('jquery-nos-appdesk',
                 defaultView : 'grid',
                 locales : {},
                 sites : {},
-                culture: 'en-GB',
+                culture: $.nosLang.substr(0, 2),
                 contexts : {},
                 hideContexts : false,
                 texts : {
@@ -1557,7 +1557,7 @@ define('jquery-nos-appdesk',
                                 $.each(object, function(key, val) {
                                     // `i18n` key must not be processed. For instance, it can contain the `columns` key
                                     // but we would not want it to be processed.
-                                    if (key === 'i18n') {
+                                    if (key === 'i18nMessages' || key === 'texts') {
                                         return;
                                     }
 
@@ -1663,6 +1663,9 @@ define('jquery-nos-appdesk',
                                                                 $.each(cellFormatters, function(i, formatter) {
                                                                     formatter = $.nosDataReplace($.extend(true, {}, formatter), args.row.data);
                                                                     formatter = $.type(formatter) === 'object' ? formatter : {type: formatter};
+                                                                    if (formatter.ignore && parseInt(formatter.ignore) > 0) {
+                                                                        return;
+                                                                    }
                                                                     if (formatter.replace) {
                                                                         args.$container.empty();
                                                                     }
