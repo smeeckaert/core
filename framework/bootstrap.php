@@ -183,6 +183,8 @@ if (!empty($config_app['base_url'])) {
     define('NOS_RELATIVE_DIR', ltrim(parse_url($config_app['base_url'], PHP_URL_PATH), '/'));
 }
 
+require_once realpath(NOSROOT.'novius-os'.DS.'novius_cloud').DS.'init.php'; // AJOUT POUR NOVIUS CLOUD
+
 Fuel::init(Arr::merge($config_nos, $config_app));
 
 Module::load('nos', NOSPATH);
