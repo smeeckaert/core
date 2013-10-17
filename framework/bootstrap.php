@@ -132,6 +132,11 @@ if (isset($_SERVER['FUEL_ENV'])) {
 //* Register application autoloader
 spl_autoload_register(
     function ($class) {
+        $class_alias = \Autoloader::getClassAliases($class);
+        if ($class_alias !== false) {
+            class_alias($class_alias, $class);
+            return true;
+        }
 
         $class = ltrim($class, '\\');
         $parts = explode('\\', $class);
@@ -172,6 +177,7 @@ spl_autoload_register(
 );
 //*/
 
+\Autoloader::addClassAlias('Nos\\Task');
 // Initialize the framework with the config file.
 $config_nos = include(NOSPATH.'config/config.php');
 
