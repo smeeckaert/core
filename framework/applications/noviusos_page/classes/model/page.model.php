@@ -435,27 +435,6 @@ class Model_Page extends \Nos\Orm\Model
         $this->delete_cache();
     }
 
-    public function _event_after_change_virtual_path()
-    {
-        $old_virtual_path = $this->getOldVirtualPath();
-        $new_virtual_path = $this->virtual_path(true);
-
-        \Nos\Config_Data::load('enhancers');
-
-        $url_enhanced = \Nos\Config_Data::get('url_enhanced', array());
-        // No need for try / catch because it's a page, we know it's contextable
-        $context = $this->get_context();
-        foreach ($url_enhanced as $page_id => $enhanced)
-        {
-            if ($context == $enhanced['context'] && \Str::starts_with($enhanced['url'], $old_virtual_path)) {
-                $url_enhanced[$page_id]['url'] = $new_virtual_path . \Str::sub($url_enhanced[$page_id]['url'], \Str::length($old_virtual_path));
-            }
-        }
-        \Nos\Config_Data::save('url_enhanced', $url_enhanced);
-
-
-    }
-
     public function _event_before_delete()
     {
         $this->_page_id_for_delete = $this->page_id;

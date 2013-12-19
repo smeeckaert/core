@@ -173,24 +173,7 @@ class Orm_Behaviour_Virtualpath extends Orm_Behaviour_Virtualname
                 ->set($replaces)
                 ->where($virtual_path_property, 'LIKE', $old_virtual_path.'%')
                 ->execute();
-
-            $item->observe('after_change_virtual_path');
         }
-    }
-
-    public function getOldVirtualPath(\Nos\Orm\Model $item)
-    {
-        $virtual_path_property = $this->_properties['virtual_path_property'];
-        if (isset($this->_data_diff[$item::implode_pk($item)])) {
-            $diff = $this->_data_diff[$item::implode_pk($item)];
-
-            $old_virtual_path = $diff[0][$virtual_path_property];
-            if (!empty($this->_properties['extension_property'])) {
-                $old_virtual_path = preg_replace('`'.preg_quote($this->extension($item, true)).'$`iUu', '/', $old_virtual_path);
-            }
-            return $old_virtual_path;
-        }
-        return null;
     }
 
     public function virtual_path(\Nos\Orm\Model $item, $dir = false)
