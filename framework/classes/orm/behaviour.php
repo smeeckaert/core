@@ -29,7 +29,7 @@ abstract class Orm_Behaviour extends \Orm\Observer
     protected function _config()
     {
         list($application, $relative_path) = \Config::configFile(get_called_class());
-        $this->_config = \Config::loadConfiguration($application, $relative_path);
+        $this->_config = \Config::load($application.'::'.$relative_path, true);
     }
 
     public function commonConfig(&$config)
@@ -49,12 +49,7 @@ abstract class Orm_Behaviour extends \Orm\Observer
             }
 
             if ($valueTo !== false) {
-                \Arr::set($config, $keyTo.'.'.$key,
-                    \Arr::merge(
-                        $value,
-                        $valueTo
-                    )
-                );
+                \Arr::set($config, $keyTo.'.'.$key, \Arr::merge($value, $valueTo));
             }
         }
     }

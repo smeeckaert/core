@@ -96,32 +96,16 @@ class Orm_Behaviour_Contextable extends Orm_Behaviour
 
     public function before_query(&$options)
     {
-        if (array_key_exists('where', $options)) {
-            $where = $options['where'];
-            if (isset($where['context'])) {
-                $where[$this->_properties['context_property']] = $where['context'];
-                unset($where['context']);
+        $context_property = $this->_properties['context_property'];
+        $options['before_where']['context'] = function ($condition) use ($context_property) {
+            $condition[0] = $context_property;
+            if (count($condition) == 2 && is_array($condition[1])) {
+                $condition[2] = $condition[1];
+                $condition[1] = 'IN';
             }
-
-            foreach ($where as $k => $w) {
-                if (is_int($k)) {
-                    $keys = array_keys($w);
-                    if (count($w) == 1 && $keys[0] == 'context') {
-                        $where[$k] = array($this->_properties['context_property'] => $w[$keys[0]]);
-                    }
-
-                    if (count($w) > 1 && $w[0] == 'context') {
-                        $w[0] = $this->_properties['context_property'];
-                        if (count($w) == 2 && is_array($w[1])) {
-                            $w[2] = $w[1];
-                            $w[1] = 'IN';
-                        }
-                        $where[$k] = $w;
-                    }
-                }
-            }
-            $options['where'] = $where;
-        }
+            return $condition;
+        };
+        $options['before_order_by']['context'] = $context_property;
     }
 
     public function crudFields(&$fields, $crud)

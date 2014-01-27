@@ -1,6 +1,6 @@
 /*
  *
- * Wijmo Library 3.20131.4
+ * Wijmo Library 3.20133.20
  * http://wijmo.com/
  *
  * Copyright(c) GrapeCity, Inc.  All rights reserved.
@@ -15,7 +15,10 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+/// <reference path="../wijutil/jquery.wijmo.wijutil.ts"/>
 /// <reference path="../wijutil/jquery.wijmo.wijtouchutil.ts"/>
+/// <reference path="../External/declarations/jquery.d.ts"/>
+/// <reference path="../External/declarations/jquery.ui.d.ts"/>
 /// <reference path="../External/declarations/jquerymobile.d.ts"/>
 /// <reference path="wijmo.d.ts"/>
 /*
@@ -38,7 +41,7 @@ var wijmo;
             stateFocus: "ui-state-focus",
             stateActive: "ui-state-active",
             stateDefault: "ui-state-default",
-            stateHightlight: "ui-state-highlight",
+            stateHighlight: "ui-state-highlight",
             stateHover: "ui-state-hover",
             stateChecked: "ui-state-checked",
             stateError: "ui-state-error",
@@ -63,14 +66,28 @@ var wijmo;
             iconArrowDown: "ui-icon-triangle-1-s",
             iconArrowLeft: "ui-icon-triangle-1-w",
             iconArrowRightDown: "ui-icon-triangle-1-se",
+            iconArrowThickDown: "ui-icon-arrowthick-1-s glyphicon glyphicon-arrow-down",
+            iconArrowThickUp: "ui-icon-arrowthick-1-n glyphicon glyphicon-arrow-up",
             iconCaratUp: "ui-icon-carat-1-n",
             iconCaratRight: "ui-icon-carat-1-e",
             iconCaratDown: "ui-icon-carat-1-s",
             iconCaratLeft: "ui-icon-carat-1-w",
+            iconClock: "ui-icon-clock glyphicon glyphicon-time",
+            iconPencil: "ui-icon-pencil glyphicon glyphicon-pencil",
             iconSeekFirst: "ui-icon-seek-first",
             iconSeekEnd: "ui-icon-seek-end",
             iconSeekNext: "ui-icon-seek-next",
             iconSeekPrev: "ui-icon-seek-prev",
+            iconPrint: "ui-icon-print",
+            iconDisk: "ui-icon-disk",
+            iconSeekStart: "ui-icon-seek-start",
+            iconFullScreen: "ui-icon-newwin",
+            iconContinousView: "ui-icon-carat-2-n-s",
+            iconZoomIn: "ui-icon-zoomin",
+            iconZoomOut: "ui-icon-zoomout",
+            iconBookmark: "ui-icon-bookmark",
+            iconSearch: "ui-icon-search",
+            iconImage: "ui-icon-image",
             inputSpinnerLeft: "ui-input-spinner-left",
             inputSpinnerRight: "ui-input-spinner-right",
             inputTriggerLeft: "ui-input-trigger-left",
@@ -122,12 +139,20 @@ var wijmo;
             iconArrowRightDown: "ui-icon-arrow-d",
             iconSeekFirst: "ui-icon-arrow-l",
             iconSeekEnd: "ui-icon-arrow-r",
-            iconSeekNext: "ui-icon-arrow-l",
-            iconSeekPrev: "ui-icon-arrow-r",
+            iconSeekNext: "ui-icon-arrow-r",
+            iconSeekPrev: "ui-icon-arrow-l",
             iconClose: "ui-icon-delete",
             iconStop: "ui-icon-grid",
             iconCheck: "ui-icon-checkbox-on"
         };
+        jQueryWijmo.wijMobileThemePrefix = [
+            "ui-bar", 
+            "ui-body", 
+            "ui-overlay", 
+            "ui-btn-up", 
+            "ui-btn-hover", 
+            "ui-btn-down"
+        ];
         jQueryWijmo.autoInit = // auto self-init widgets
         function autoInit(widgetName, pageKeepNative) {
             if($.mobile && $.mobile.page && pageKeepNative) {
@@ -175,13 +200,28 @@ var wijmo;
                 this.autoInit(name, def.options.initSelector);
             }
         };
+        jQueryWijmo.addThemeToMobileCSS = function addThemeToMobileCSS(theme, classes) {
+            $.each(classes, function (key, cl) {
+                if(typeof cl === "string") {
+                    $.each(jQueryWijmo.wijMobileThemePrefix, function (idx, css) {
+                        var regExp = new RegExp("\\b" + css);
+                        if(regExp.test(cl)) {
+                            classes[key] = cl + " " + css + "-" + theme;
+                        }
+                    });
+                } else {
+                    jQueryWijmo.addThemeToMobileCSS(theme, cl);
+                }
+            });
+        };
         return jQueryWijmo;
     })();    
     $.wijmo = jQueryWijmo;
     // Declarations to support TypeScript type system
     var JQueryUIWidget = (function () {
         function JQueryUIWidget() { }
-        JQueryUIWidget.prototype.destroy = function () {
+        JQueryUIWidget.prototype.destroy = /** Removes the dialog functionality completely. This will return the element back to its pre-init state. */
+        function () {
         };
         JQueryUIWidget.prototype._setOption = function (name, value) {
         };
@@ -189,7 +229,8 @@ var wijmo;
         };
         JQueryUIWidget.prototype._init = function () {
         };
-        JQueryUIWidget.prototype.widget = function () {
+        JQueryUIWidget.prototype.widget = /** Returns a jQuery object containing the original element or other relevant generated element. */
+        function () {
             return this.element;
         };
         return JQueryUIWidget;
@@ -259,7 +300,7 @@ var wijmo;
             this._baseWidget().prototype._setOption.apply(this, arguments);
             //Fixed an issue for jQuery mobile. when set the disabled option, the jQuery mobile set
             // 'ui-state-disabled' css on the element.
-            if(name === "disabled" && this._isMobile) {
+            if(name === "disabled" && value && this._isMobile) {
                 this.element.removeClass("ui-state-disabled").addClass(this.options.wijCSS.stateDisabled);
             }
         };
@@ -268,14 +309,14 @@ var wijmo;
     wijmo.wijmoWidget = wijmoWidget;    
     wijmoWidget.prototype._syncEventPrefix = true;
     wijmoWidget.prototype._isMobile = false;
-    wijmoWidget.prototype.options = $.extend(true, {
-    }, wijmoWidget.prototype.options, wijmoWidget.prototype._baseWidget().prototype.options);
     //Check if jQuery Mobile is on the page and make sure autoMobilize is set to true (so that this default behavior can be turned off)
     if($.mobile != null && $.wijmo.autoMobilize === true) {
         //Set mobile CSS classes to work with jQuery Mobile CSS Framework
         //wijmoWidget.options.wijCSS = $.wijmo.wijMobileCSS;
         $.extend(true, wijmoWidget.prototype.options.wijCSS, $.wijmo.wijMobileCSS);
         wijmoWidget.prototype._isMobile = true;
+        wijmoWidget.prototype.options = $.extend(true, {
+        }, wijmoWidget.prototype.options, wijmoWidget.prototype._baseWidget().prototype.options);
         wijmoWidget.prototype.enhanceWithin = function (target, useKeepNative) {
             if(!this._widgetCreated) {
                 $.mobile.widget.prototype.enhanceWithin.apply(this, arguments);
@@ -303,12 +344,32 @@ var wijmo;
                     return i.replace(reg1, "\"$1\"");
                 });
                 return $.parseJSON(str);
-            }, options = optionsParser(ele.attr("data-" + $.mobile.nsNormalize("options")));
+            }, options = optionsParser(ele.attr("data-" + $.mobile.nsNormalize("options"))), wijCSS;
             baseOptions = $.mobile.widget.prototype._getCreateOptions.apply(this, arguments);
-            return $.extend(baseOptions, options);
+            //add theme support in mobile mode
+            wijCSS = $.extend(true, {
+            }, this.options.wijCSS);
+            this.theme = this.options.theme !== undefined ? this.options.theme : this.element.jqmData("theme");
+            if(this.theme) {
+                $.wijmo.addThemeToMobileCSS(this.theme, wijCSS);
+            }
+            return $.extend(baseOptions, {
+                wijCSS: wijCSS
+            }, options);
         };
         $.widget("wijmo.widget", $.mobile.widget, wijmoWidget.prototype);
+        $(document).on("pageshow", function (event, ui) {
+            if(event.target == null) {
+                return;
+            }
+            var page = $(event.target);
+            if(page.wijTriggerVisibility) {
+                page.wijTriggerVisibility();
+            }
+        });
     } else {
+        wijmoWidget.prototype.options = $.extend(true, {
+        }, wijmoWidget.prototype.options, wijmoWidget.prototype._baseWidget().prototype.options);
         //jQuery Mobile either does not exist or the autoMobilize flag has been turned off.
         $.widget("wijmo.widget", wijmoWidget.prototype);
     }

@@ -103,6 +103,57 @@
         }
     });
 
+    Globalize.addCultureInfo( "es-ES", "default", {
+        name: "es-ES",
+        englishName: "Spanish (Spain, International Sort)",
+        nativeName: "Español (España, alfabetización internacional)",
+        language: "es",
+        numberFormat: {
+            ",": ".",
+            ".": ",",
+            NaN: "NeuN",
+            negativeInfinity: "-Infinito",
+            positiveInfinity: "Infinito",
+            percent: {
+                ",": ".",
+                ".": ","
+            },
+            currency: {
+                pattern: ["-n $","n $"],
+                ",": ".",
+                ".": ",",
+                symbol: "€"
+            }
+        },
+        calendars: {
+            standard: {
+                firstDay: 1,
+                days: {
+                    names: ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"],
+                    namesAbbr: ["dom","lun","mar","mié","jue","vie","sáb"],
+                    namesShort: ["do","lu","ma","mi","ju","vi","sá"]
+                },
+                months: {
+                    names: ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre",""],
+                    namesAbbr: ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic",""]
+                },
+                AM: null,
+                PM: null,
+                eras: [{"name":"d.C.","start":null,"offset":0}],
+                patterns: {
+                    d: "dd/MM/yyyy",
+                    D: "dddd, dd' de 'MMMM' de 'yyyy",
+                    t: "H:mm",
+                    T: "H:mm:ss",
+                    f: "dddd, dd' de 'MMMM' de 'yyyy H:mm",
+                    F: "dddd, dd' de 'MMMM' de 'yyyy H:mm:ss",
+                    M: "dd MMMM",
+                    Y: "MMMM' de 'yyyy"
+                }
+            }
+        }
+    });
+
     Globalize.addCultureInfo( "ja-JP", "default", {
         name: "ja-JP",
         englishName: "Japanese (Japan)",
@@ -170,6 +221,60 @@
                     F: "gg y'年'M'月'd'日' H:mm:ss",
                     M: "M'月'd'日'",
                     Y: "gg y'年'M'月'"
+                }
+            }
+        }
+    });
+
+    Globalize.addCultureInfo( "ru-RU", "default", {
+        name: "ru-RU",
+        englishName: "Russian (Russia)",
+        nativeName: "русский (Россия)",
+        language: "ru",
+        numberFormat: {
+            ",": " ",
+            ".": ",",
+            negativeInfinity: "-бесконечность",
+            positiveInfinity: "бесконечность",
+            percent: {
+                pattern: ["-n%","n%"],
+                ",": " ",
+                ".": ","
+            },
+            currency: {
+                pattern: ["-n$","n$"],
+                ",": " ",
+                ".": ",",
+                symbol: "р."
+            }
+        },
+        calendars: {
+            standard: {
+                "/": ".",
+                firstDay: 1,
+                days: {
+                    names: ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"],
+                    namesAbbr: ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],
+                    namesShort: ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"]
+                },
+                months: {
+                    names: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь",""],
+                    namesAbbr: ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек",""]
+                },
+                monthsGenitive: {
+                    names: ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря",""],
+                    namesAbbr: ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек",""]
+                },
+                AM: null,
+                PM: null,
+                patterns: {
+                    d: "dd.MM.yyyy",
+                    D: "d MMMM yyyy 'г.'",
+                    t: "H:mm",
+                    T: "H:mm:ss",
+                    f: "d MMMM yyyy 'г.' H:mm",
+                    F: "d MMMM yyyy 'г.' H:mm:ss",
+                    Y: "MMMM yyyy"
                 }
             }
         }

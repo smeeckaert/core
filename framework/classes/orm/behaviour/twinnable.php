@@ -601,7 +601,7 @@ class Orm_Behaviour_Twinnable extends Orm_Behaviour_Contextable
         $class = $this->_class;
         $query = $class::query($options)
             ->and_where_open()
-                ->where($this->_properties['context_property'], '=', $context)
+                ->where($this->_properties['context_property'], is_array($context) ? 'IN' : '=', $context)
                 ->or_where($this->_properties['is_main_property'], '=', 1)
             ->and_where_close();
 
@@ -609,7 +609,8 @@ class Orm_Behaviour_Twinnable extends Orm_Behaviour_Contextable
         $result_context = array();
         foreach ($query->get() as $pk => $item) {
             if (isset($result_context[$item->{$this->_properties['common_id_property']}])) {
-                if ($item->{$this->_properties['context_property']} !== $context) {
+                if ((is_array($context) && in_array($item->{$this->_properties['context_property']}, $context)) ||
+                    $item->{$this->_properties['context_property']} !== $context) {
                     continue;
                 } else {
                     unset($result[$result_context[$item->{$this->_properties['common_id_property']}]]);
@@ -624,28 +625,8 @@ class Orm_Behaviour_Twinnable extends Orm_Behaviour_Contextable
 
     public function before_query(&$options)
     {
-        if (array_key_exists('where', $options)) {
-            $where = $options['where'];
-            if (isset($where['context_main'])) {
-                $where[$this->_properties['is_main_property']] = $where['context_main'];
-                unset($where['context_main']);
-            }
-
-            foreach ($where as $k => $w) {
-                if (is_int($k)) {
-                    $keys = array_keys($w);
-                    if (count($w) == 1 && $keys[0] == 'context_main') {
-                        $where[$k] = array($this->_properties['is_main_property'] => $w[$keys[0]]);
-                    }
-
-                    if (count($w) > 1 && $w[0] == 'context_main') {
-                        $w[0] = $this->_properties['is_main_property'];
-                        $where[$k] = $w;
-                    }
-                }
-            }
-            $options['where'] = $where;
-        }
+        $options['before_where']['context_main'] = $this->_properties['is_main_property'];
+        $options['before_order_by']['context_main'] = $this->_properties['is_main_property'];
     }
 
     public function gridAfter($config, $objects, &$items)

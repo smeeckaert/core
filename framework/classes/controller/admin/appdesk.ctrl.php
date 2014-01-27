@@ -262,7 +262,7 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
                     continue;
                 }
                 list($application, $file_name) = \Config::configFile($inspector_name);
-                $inspector_config = \Config::loadConfiguration($application, $file_name);
+                $inspector_config = \Config::load($application.'::'.$file_name, true);
                 if (is_array($value)) {
                     $inspector_config = \Arr::merge($inspector_config, $value);
                 }
@@ -466,6 +466,16 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
 
         $i18n_default = \Config::load('nos::i18n_common', true);
         $config['i18n'] = array_merge($i18n_default, \Arr::get($config, 'i18n', array()));
+
+        if (isset($config['i18n']['showNbItems']) && !is_array($config['i18n']['showNbItems'])) {
+            \Log::deprecated(
+                'The "showNbItems" key of appdesk '.
+                (isset($config['model']) ? $config['model'] : $application).
+                ' config\'s i18n array must contain an array of different plurals'.
+                ' translation, and not the translated text.',
+                'Version D'
+            );
+        }
 
         foreach ($config as $key => $idc) {
             if (!in_array($key, $valid_keys)) {

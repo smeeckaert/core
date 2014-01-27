@@ -57,20 +57,6 @@ class Renderer_Datetime_Picker extends Renderer
     );
 
     /**
-     * Standalone build of the renderer.
-     *
-     * @param  array  $renderer Renderer definition (attributes + renderer_options)
-     * @return string The <input> tag + JavaScript to initialise it
-     */
-    public static function renderer($renderer = array())
-    {
-        $fieldset = \Fieldset::forge(uniqid());
-        $field = new static($renderer['name'], '', $renderer, array(), $fieldset);
-        $fieldset->add_field($field);
-        return $fieldset->field($renderer['name'])->set_template('{field}')->build().$fieldset->build_append();
-    }
-
-    /**
      * Build the field
      *
      * @return  string
@@ -157,9 +143,11 @@ class Renderer_Datetime_Picker extends Renderer
     protected function processValue($value)
     {
         if (!empty($value) && $value != '0000-00-00 00:00:00' && $value != '0000-00-00' && $value != '00:00:00') {
-            return \Date::create_from_string($value,
-                $this->renderer_options['mysql_store_format'])->format($this->renderer_options['mysql_input_format']);
-        } else if ($this->renderer_options['null_allowed']) {
+            return \Date::create_from_string(
+                $value,
+                $this->renderer_options['mysql_store_format']
+            )->format($this->renderer_options['mysql_input_format']);
+        } elseif ($this->renderer_options['null_allowed']) {
             return '';
         } else {
             return \Date::forge()->format($this->renderer_options['mysql_input_format']); //'%Y-%m-%d %H:%M'
@@ -170,9 +158,11 @@ class Renderer_Datetime_Picker extends Renderer
     {
         $value = $data[$this->name];
         if (!empty($value) && $value != '0000-00-00 00:00:00' && $value != '0000-00-00' && $value != '00:00:00') {
-            $item->{$this->name} = \Date::create_from_string($value,
-                $this->renderer_options['mysql_input_format'])->format($this->renderer_options['mysql_store_format']);
-        } else if ($this->renderer_options['null_allowed']) {
+            $item->{$this->name} = \Date::create_from_string(
+                $value,
+                $this->renderer_options['mysql_input_format']
+            )->format($this->renderer_options['mysql_store_format']);
+        } elseif ($this->renderer_options['null_allowed']) {
             $item->{$this->name} = '';
         } else {
             $item->{$this->name} = \Date::forge()->format($this->renderer_options['mysql_input_format']);

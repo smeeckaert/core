@@ -48,25 +48,20 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
 
     public function before_query(&$options)
     {
-        if (array_key_exists('where', $options)) {
-            $where = $options['where'];
-            foreach ($where as $k => $w) {
-                if (isset($w[0])  && $w[0] == 'parent') {
-                    $property = $this->_parent_relation->key_from[0];
-                    if ($w[1] === null) {
-                        $where[$k] = array($property, 'IS', null);
-                    } else {
-                        $id = $w[1]->id;
-                        if (empty($id)) {
-                            unset($where[$k]);
-                        } else {
-                            $where[$k] = array($property, $id);
-                        }
-                    }
+        $property = $this->_parent_relation->key_from[0];
+        $options['before_where']['parent'] = function ($condition) use ($property) {
+            if ($condition[1] === null) {
+                $condition = array($property, 'IS', null);
+            } else {
+                $id = $condition[1]->id;
+                if (empty($id)) {
+                    $condition = null;
+                } else {
+                    $condition = array($property, $id);
                 }
             }
-            $options['where'] = $where;
-        }
+            return $condition;
+        };
     }
 
     /**
@@ -128,18 +123,21 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
         if ($parent !== null) {
             // Check if the object is appropriate
             if (get_class($parent) != $this->_parent_relation->model_to) {
-                throw new \Exception(sprintf('Cannot set "parent" to object of type %s in tree behaviour (expected %s): %s',
-                        (string) get_class($parent),
-                        $this->_parent_relation->model_to,
-                        $this->_class
-                    ));
+                throw new \Exception(sprintf(
+                    'Cannot set "parent" to object of type %s in tree behaviour (expected %s): %s',
+                    (string) get_class($parent),
+                    $this->_parent_relation->model_to,
+                    $this->_class
+                ));
             }
 
             if (!$item->is_new()) {
                 $children_ids = $this->get_ids_children($item, true);
                 if (in_array($parent->id, $children_ids)) {
                     // Dev details : Cannot move an element inside of its own children
-                    throw new \Exception(__('No, it cannot be moved here. Why? Because you cannot put something into itself.'));
+                    throw new \Exception(
+                        __('No, it cannot be moved here. Why? Because you cannot put something into itself.')
+                    );
                 }
             }
         }
@@ -205,7 +203,10 @@ class Orm_Behaviour_Tree extends Orm_Behaviour
         }
 
         if (!empty($this->_properties['level_property'])) {
-            $item->{$this->_properties['level_property']} = $parent === null ? 1 : $parent->{$this->_properties['level_property']} + 1;
+            $item->{$this->_properties['level_property']} =
+                $parent === null ?
+                    1 :
+                    $parent->{$this->_properties['level_property']} + 1;
         }
     }
 

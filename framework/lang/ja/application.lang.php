@@ -1,29 +1,25 @@
 <?php
 
-// Generated on 19/08/2013 18:12:14
+// Generated on 11/12/2013 17:57:29
 
-// 15 out of 17 messages are translated (88%).
-// 76 out of 98 words are translated (88%).
+// 18 out of 18 messages are translated (100%).
+// 99 out of 99 words are translated (100%).
 
 return array(
-    #. Note to translator: This is a submit button
-    #: classes/controller/admin/crud.ctrl.php:280
-    'Add' => '追加',
-
-    #: classes/controller/admin/crud.ctrl.php:369
+    #: classes/controller/admin/crud.ctrl.php:350
     'This item already exists in {{context}}. Therefore your item cannot be added.' => 'このアイテムは既に{{context}}にあります。したがって追加することはできません。',
 
-    #: classes/controller/admin/appdesk.ctrl.php:165
+    #: classes/controller/admin/appdesk.ctrl.php:167
     'Default view' => 'デフォルトビュー',
 
     #: views/crud/context_common_fields.view.php:17
-    'This field is common to all languages' => '',
+    'This field is common to all languages' => 'このフィールドは全ての言語に共通です。',
 
     #: views/crud/context_common_fields.view.php:17
     'This field is common to all contexts' => 'このフィールドは全てのコンテキストに共通です。',
 
     #: views/crud/context_common_fields.view.php:19
-    'When you modify the value of this field, the change applies to the following languages:' => '',
+    'When you modify the value of this field, the change applies to the following languages:' => 'このフィールドの値を変更すると、以下の言語に適用されます。',
 
     #: views/crud/context_common_fields.view.php:20
     'When you modify the value of this field, the change applies to the following contexts:' => 'このフィールドの値を変更すると、以下のコンテキストに適用されます。',
@@ -58,5 +54,13 @@ return array(
 
     #: views/crud/blank_slate.view.php:118
     '(Form filled with the contents from the original version)' => '(元のコンテンツが挿入された状態から)',
+
+    #. Note to translator: This is a submit button
+    #: views/crud/toolbar.view.php:18
+    'Add' => '追加',
+
+    #. Note to translator: This is a submit button
+    #: views/crud/toolbar.view.php:21
+    'Save' => '保存',
 
 );

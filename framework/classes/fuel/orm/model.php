@@ -395,7 +395,7 @@ class Model extends \Orm\Model
             $application = static::getApplication();
             $file_name = mb_strtolower(str_replace('_', DS, \Inflector::denamespace($class)));
 
-            static::$_configs[$class] = \Config::loadConfiguration($application, $file_name);
+            static::$_configs[$class] = \Config::load($application.'::'.$file_name, true);
         }
 
         return static::$_configs[$class];
@@ -543,6 +543,11 @@ class Model extends \Orm\Model
 
     public static function query($options = array())
     {
+        $options = array_merge(array(
+            'before_where' => array(),
+            'before_order_by' => array(),
+        ), (array) $options);
+
         static::eventStatic('before_query', array(&$options));
 
         return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options);
@@ -742,7 +747,7 @@ class Model extends \Orm\Model
         return $obj;
     }
 
-    public function & get($property)
+    public function & get($property, array $conditions = array())
     {
         if (isset(static::$_properties_cached[get_called_class()][static::prefix().$property])) {
             $property = static::prefix().$property;
@@ -766,7 +771,7 @@ class Model extends \Orm\Model
             }
         }
 
-        return parent::get($property);
+        return parent::get($property, $conditions);
     }
 
     public function & __get($name)

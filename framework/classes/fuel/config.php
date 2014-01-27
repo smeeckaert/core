@@ -81,19 +81,16 @@ class Config extends \Fuel\Core\Config
 
     public static function loadConfiguration($application_name, $file_name = null)
     {
+        \Log::deprecated(
+            'The method \Config::loadConfiguration($application_name, $file_name) is deprecated, '.
+            'use \Config::load($application_name."::".$file_name, true) instead.',
+            'Version D'
+        );
+
         if ($file_name === null) {
             list($application_name, $file_name) = explode('::', $application_name);
         }
         $config = \Config::load($application_name.'::'.$file_name, true);
-        $dependencies = \Nos\Config_Data::get('app_dependencies', array());
-
-        if (!empty($dependencies[$application_name])) {
-            foreach ($dependencies[$application_name] as $application => $dependency) {
-                if ($dependency['extend_configuration']) {
-                    $config = \Arr::merge($config, \Config::load($application.'::'.$file_name, true));
-                }
-            }
-        }
         $config = \Arr::recursive_filter(
             $config,
             function ($var) {
@@ -106,8 +103,11 @@ class Config extends \Fuel\Core\Config
 
     public static function extendable_load($module_name, $file_name)
     {
-        \Log::deprecated('\Config::extendable_load is deprecated. Please rename to \Config::loadConfiguration.');
-        return static::loadConfiguration($module_name, $file_name);
+        \Log::deprecated(
+            '\Config::extendable_load($module_name, $file_name) is deprecated. '.
+            'Please rename to \Config::load($module_name."::".$file_name, true).'
+        );
+        return static::load($module_name.'::'.$file_name, true);
     }
 
     public static function metadata($application_name)
@@ -134,7 +134,7 @@ class Config extends \Fuel\Core\Config
 
     public static function application($application_name)
     {
-        return static::loadConfiguration($application_name, 'config');
+        return static::load($application_name.'::config', true);
     }
 
     public static function actions($params = array())

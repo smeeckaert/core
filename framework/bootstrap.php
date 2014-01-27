@@ -91,6 +91,13 @@ if (!MBSTRING) {
     )
 );
 
+/**
+ * Retrieves a translation from the last loaded dictionary.
+ *
+ * @param string $message The message to translate.
+ * @param string $default The default text to return when the message is not found. Default value is the message itself.
+ * @return mixed|string The translation or ``null`` if not founded
+ */
 function __($message, $default = null)
 {
     $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -102,6 +109,45 @@ function __($message, $default = null)
     return \Nos\I18n::translate_from_file($dbg[$i]['file'], $message, $default);
 }
 
+/**
+ * The plural version of __(). Some languages have more than one form for plural messages dependent on the count.
+ *
+ * @param string $singular The singular form of the string to be converted. Used as the key for the search in the dictionary
+ * @param string $plural The plural form
+ * @param bool|int $n Used to determine which plural form to used depending locale.
+ * @return array|string The translation or, if not founded, $singular is returned if n == 1, otherwise $plural
+ *                      If third parameter is ommited and translation founded, return an ``array`` of singular and plural forms
+ */
+function n__($singular, $plural, $n = false)
+{
+    $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    $i = -1;
+    do {
+        $function = $dbg[++$i]['function'];
+    } while ($function == '{closure}');
+
+    if ($n === false) {
+        $return = \Nos\I18n::translate_from_file($dbg[$i]['file'], $singular, $singular);
+        if (!is_array($return)) {
+            return array(
+                $singular,
+                $plural,
+            );
+        }
+        return $return;
+    } else {
+        return \Nos\I18n::nTranslateFromFile($dbg[$i]['file'], $singular, $plural, $n);
+    }
+}
+
+/**
+ * Retrieves a translation from a specific dictionary.
+ *
+ * @param string $group Which dictionary to look into.
+ * @param string $message The message to translate.
+ * @param string $default The default text to return when the message is not found. Default value is the message itself.
+ * @return mixed|string The translation or ``null`` if not founded
+ */
 function ___($group, $message, $default = null)
 {
     return \Nos\I18n::gget($group, $message, $default);

@@ -21,6 +21,14 @@ class Migrate extends \Fuel\Core\Migrate
 
     public static function _init()
     {
+        static::$table_definition = array(
+            'id'                => array('type' => 'int', 'auto_increment' => true, 'primary_key' => true),
+            'type'              => array('type' => 'varchar', 'constraint' => 25),
+            'name'              => array('type' => 'varchar', 'constraint' => 50),
+            'migration'         => array('type' => 'varchar', 'constraint' => 100, 'null' => false, 'default' => ''),
+            'execution_date'    => array('type' => 'timestamp', 'default' => \DB::expr('CURRENT_TIMESTAMP'), 'null' => true),
+        );
+
         if (!\Config::get('novius-os.migration_config_file')) {
             \Config::load('migrations', true);
             \Config::set('migrations.version', array());
@@ -84,7 +92,16 @@ class Migrate extends \Fuel\Core\Migrate
 
             // <<<<<<<<<<<<<<<<<<< CHANGES ARE HERE
             $migration_inst = new $migration['class']($migration['path']);
-            $result = $migration_inst->$method();
+            try {
+                $result = $migration_inst->$method();
+            } catch (\Exception $e) {
+                $ignore = false;
+                $result = true;
+                \Event::trigger_function('migrate.exception', array($e, &$ignore, $migration));
+                if (!$ignore) {
+                    throw $e;
+                }
+            }
             // >>>>>>>>>>>>>>>>>>>
             if ($result === false) {
                 logger(Fuel::L_INFO, 'Skipped migration to '.$ver.'.');
