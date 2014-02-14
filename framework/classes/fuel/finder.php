@@ -131,7 +131,9 @@ class Finder extends Fuel\Core\Finder
             // get extra information of the active request
             if (class_exists('Request', false) and ($request = \Request::active())) {
                 $request->module and $cache_id .= $request->module;
-                $paths = array_merge($request->get_paths(), $paths);
+                if ($request->module !== 'nos') {
+                    $paths = array_merge($request->get_paths(), $paths);
+                }
             }
         }
 
@@ -222,7 +224,7 @@ class Finder extends Fuel\Core\Finder
                                 'The config file "'.$app_extended.'::'.$file.'" is extended by application '.
                                 '"'.$application.'" without using a subdirectory "'.($app_extended === 'nos' ? 'novius-os/' : 'apps/'.$app_extended.'/').'", this '.
                                 'mechanism is deprecated.',
-                                'Version D'
+                                'Dubrovka'
                             );
                             continue;
                         }
