@@ -330,6 +330,14 @@ class Controller_Front extends Controller
     }
 
     /**
+     * @return \Nos\Template\Variation\Model_Template_Variation Current Model_Template_Variation displayed.
+     */
+    public function getTemplateVariation()
+    {
+        return $this->_page->template_variation;
+    }
+
+    /**
      * @return mixed Current wysiwyg ID processed.
      */
     public function getWysiwygName()
@@ -722,7 +730,7 @@ class Controller_Front extends Controller
         // Scan all wysiwyg
         foreach ($this->_template['layout'] as $wysiwyg_name => $layout) {
             $this->_wysiwyg_name = $wysiwyg_name;
-            $wysiwyg[$wysiwyg_name] = Nos::parse_wysiwyg($this->_page->wysiwygs->{$wysiwyg_name});
+            $wysiwyg[$wysiwyg_name] = Tools_Wysiwyg::parse($this->_page->wysiwygs->{$wysiwyg_name});
         }
         $this->_wysiwyg_name = null;
 
@@ -745,6 +753,7 @@ class Controller_Front extends Controller
 
             $page = Page\Model_Page::find('first', array(
                     'where' => $where,
+                    'related' => ('template_variation'),
                 ));
         } else {
             foreach ($this->_contexts_possibles as $context => $domain) {
@@ -768,6 +777,7 @@ class Controller_Front extends Controller
 
                 $page = \Nos\Page\Model_Page::find('first', array(
                     'where' => $where,
+                    'related' => array('template_variation' => array('related' => 'linked_menus')),
                 ));
 
                 if (!empty($page)) {
@@ -796,16 +806,16 @@ class Controller_Front extends Controller
 
     protected function _findTemplate()
     {
-        // Find the template
-        $templates = \Nos\Config_Data::get('templates', array());
-
-        if (!isset($templates[$this->_page->page_template])) {
-            throw new \Exception('The template '.$this->_page->page_template.' is not configured.');
+        if (!isset($this->_page->template_variation)) {
+            throw new \Exception('This page have no template variation configured.');
         }
 
-        $this->_template = $templates[$this->_page->page_template];
+        $this->_template = $this->_page->template_variation->configCompiled();
         if (empty($this->_template['file'])) {
-            throw new \Exception('The template file for '. ($this->_template['title'] ?: $this->_page->page_template ).' is not defined.');
+            throw new \Exception(
+                'The template file for '.
+                ($this->_template['title'] ?: $this->_page->template_variation->tpvar_template ).' is not defined.'
+            );
         }
 
         try {

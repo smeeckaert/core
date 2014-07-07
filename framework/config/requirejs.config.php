@@ -17,9 +17,11 @@ return array(
         'modernizr' => 'static/novius-os/admin/vendor/modernizr',
         'raphael' => 'static/novius-os/admin/vendor/raphael/raphael-min',
 
-        'jquery' => 'static/novius-os/admin/vendor/jquery/jquery-1.10.2',
+        'jquery' => 'static/novius-os/admin/vendor/jquery/jquery-1.11.1',
         'jquery-migrate' => 'static/novius-os/admin/vendor/jquery/jquery-migrate-1.2.1',
 
+        'jquery.simulate' => 'static/novius-os/admin/vendor/jquery/simulate/jquery.simulate',
+        'jquery.taphold' => 'static/novius-os/admin/vendor/jquery/taphold/taphold',
         'jquery.cookie' => 'static/novius-os/admin/vendor/jquery/cookie/jquery.cookie',
         'jquery.globalize' => 'static/novius-os/admin/vendor/jquery/globalize/globalize',
         'jquery.globalize.cultures' => 'static/novius-os/admin/vendor/jquery/globalize/cultures/globalize.cultures',
@@ -32,6 +34,8 @@ return array(
             'static/novius-os/admin/vendor/jquery/jquery-password_strength/jquery.password_strength',
         'jquery.validate' => 'static/novius-os/admin/vendor/jquery/jquery-validation/jquery.validate',
         'jquery-ui.tag-it' => 'static/novius-os/admin/vendor/jquery/ui-tag-it/js/tag-it',
+        'jquery-ui.nestedSortable' =>
+            'static/novius-os/admin/vendor/jquery/ui-nestedsortable/jquery.mjs.nestedSortable',
 
         'jquery-ui.core' => 'static/novius-os/admin/vendor/jquery-ui/jquery.ui.core',
         'jquery-ui.widget' => 'static/novius-os/admin/vendor/jquery-ui/jquery.ui.widget',
@@ -69,6 +73,14 @@ return array(
         'jquery-ui.effects.slide' => 'static/novius-os/admin/vendor/jquery-ui/jquery.ui.effect-slide',
         'jquery-ui.effects.transfer' => 'static/novius-os/admin/vendor/jquery-ui/jquery.ui.effect-transfer',
 
+        'pnotify' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.nonblock' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.buttons' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.callbacks' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.confirm' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.desktop' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+        'pnotify.history' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom',
+
         'wijmo.widget' => 'static/novius-os/admin/vendor/wijmo/js/Base/jquery.wijmo.widget',
         'wijmo.data' => 'static/novius-os/admin/vendor/wijmo/js/data/wijmo.data',
         'wijmo.data.wijdatasource' => 'static/novius-os/admin/vendor/wijmo/js/data/wijmo.data.wijdatasource',
@@ -94,12 +106,19 @@ return array(
         'wijmo.wijgallery' => 'static/novius-os/admin/vendor/wijmo/js/wijgallery/jquery.wijmo.wijgallery',
         'wijmo.wijgauge' => 'static/novius-os/admin/vendor/wijmo/js/wijgauge/jquery.wijmo.wijgauge',
         'wijmo.wijgrid' => 'static/novius-os/admin/vendor/wijmo/js/wijgrid/jquery.wijmo.wijgrid',
+        'wijmo.wijcharex' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijcharex',
         'wijmo.wijinputcore' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputcore',
         'wijmo.wijinputdate' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputdate',
+        'wijmo.wijinputdateformat' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputdateformat',
         'wijmo.wijinputmask' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputmask',
         'wijmo.wijinputmaskcore' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputmaskcore',
+        'wijmo.wijinputmaskformat' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputmaskformat',
         'wijmo.wijinputnumber' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputnumber',
+        'wijmo.wijinputnumberformat' =>
+            'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputnumberformat',
         'wijmo.wijinputtext' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputtext',
+        'wijmo.wijinputtextformat' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijinputtextformat',
+        'wijmo.wijstringinfo' => 'static/novius-os/admin/vendor/wijmo/js/wijinput/jquery.wijmo.wijstringinfo',
         'wijmo.wijlightbox' => 'static/novius-os/admin/vendor/wijmo/js/wijlightbox/jquery.wijmo.wijlightbox',
         'wijmo.wijlineargauge' => 'static/novius-os/admin/vendor/wijmo/js/wijneargauge/jquery.wijmo.wijneargauge',
         'wijmo.wijlinechart' => 'static/novius-os/admin/vendor/wijmo/js/wijlinechart/jquery.wijmo.wijlinechart',
@@ -130,6 +149,7 @@ return array(
         'jquery-nos-validate' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.validate',
         'jquery-nos-wysiwyg' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.wysiwyg',
         'jquery-nos' => 'static/novius-os/admin/novius-os/js/jquery.novius-os',
+        'jquery-nos-contextmenu' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.contextmenu',
         'jquery-nos-loadspinner' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.loadspinner',
         'jquery-nos-ostabs' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.ostabs',
         'jquery-nos-preview' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.preview',
@@ -138,10 +158,11 @@ return array(
         'jquery-nos-thumbnailsgrid' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.thumbnailsgrid',
         'jquery-nos-appdesk' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.appdesk',
         'jquery-nos-datacatchers' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.datacatchers',
+        'jquery-nos-tray' => 'static/novius-os/admin/novius-os/js/jquery.novius-os.tray',
 
         'jquery-nos-context-common-fields' =>
             'static/novius-os/admin/novius-os/js/views/jquery.novius-os.context-common-fields',
-        'jquery-nos-appstab' => 'static/novius-os/admin/novius-os/js/views/jquery.novius-os.appstab',
+        'jquery-nos-nosdesktop' => 'static/novius-os/admin/novius-os/js/views/jquery.novius-os.nosdesktop',
         'jquery-nos-publishable' => 'static/novius-os/admin/novius-os/js/views/jquery.novius-os.publishable',
         'jquery-nos-layout-standard' => 'static/novius-os/admin/novius-os/js/views/jquery.novius-os.layout-standard',
         'jquery-nos-toolbar-crud' => 'static/novius-os/admin/novius-os/js/views/jquery.novius-os.toolbar-crud',
@@ -155,15 +176,26 @@ return array(
         'jquery-nos-image-wysiwyg' => 'static/novius-os/admin/novius-os/js/media/jquery.novius-os.image-wysiwyg',
         'jquery-nos-link-wysiwyg' => 'static/novius-os/admin/novius-os/js/page/jquery.novius-os.link-wysiwyg',
         'jquery-nos-inspector-date' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-date',
-        'jquery-nos-inspector-model' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-model',
-        'jquery-nos-inspector-tree-model' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model',
-        'jquery-nos-inspector-tree-model-checkbox' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model-checkbox',
-        'jquery-nos-inspector-tree-model-radio' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model-radio',
-        'jquery-nos-inspector-plain-data' => 'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-plain-data',
-        'jquery-nos-renderer-datetimepicker' => 'static/novius-os/admin/novius-os/js/renderer/jquery.novius-os.renderer.datetime-picker',
+        'jquery-nos-inspector-model' =>
+            'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-model',
+        'jquery-nos-inspector-tree-model' =>
+            'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model',
+        'jquery-nos-inspector-tree-model-checkbox' =>
+            'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model-checkbox',
+        'jquery-nos-inspector-tree-model-radio' =>
+            'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-tree-model-radio',
+        'jquery-nos-inspector-plain-data' =>
+            'static/novius-os/admin/novius-os/js/inspector/jquery.novius-os.inspector-plain-data',
+        'jquery-nos-renderer-datetimepicker' =>
+            'static/novius-os/admin/novius-os/js/renderer/jquery.novius-os.renderer.datetime-picker',
+        'jquery-nos-renderer-menu-items' => 'static/apps/noviusos_menu/js/jquery.ui.renderer-menu-items',
+        'jquery-nos-renderer-item-picker' =>
+            'static/novius-os/admin/novius-os/js/renderer/jquery.novius-os.renderer.item-picker',
     ),
     'shim' => array(
         'jquery-migrate' => array('jquery'),
+        'jquery.simulate' => array('jquery'),
+        'jquery.taphold' => array('jquery'),
         'jquery.cookie' => array('jquery'),
         'jquery.globalize' => array('jquery'),
         'jquery.globalize.cultures' => array('jquery', 'jquery.globalize'),
@@ -177,6 +209,7 @@ return array(
         'jquery.validate' => array('jquery'),
         'jquery-ui.tag-it' => array('jquery', 'jquery-ui.autocomplete',
             'link!static/novius-os/admin/vendor/jquery/ui-tag-it/css/jquery.tagit.css'),
+        'jquery-ui.nestedSortable' => array('jquery', 'jquery-ui.sortable'),
 
         'jquery-ui.core' => array('jquery'),
         'jquery-ui.widget' => array('jquery'),
@@ -217,6 +250,8 @@ return array(
         'jquery-ui.effects.slide' => array('jquery', 'jquery-ui.effects.core'),
         'jquery-ui.effects.transfer' => array('jquery', 'jquery-ui.effects.core'),
 
+        'pnotify' => array('jquery'),
+
         'wijmo.widget' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'wijmo.wijutil'),
         'wijmo.data' => array('jquery'),
         'wijmo.data.wijdatasource' => array('jquery', 'wijmo.data', 'jquery.globalize', 'jquery.globalize.cultures'),
@@ -251,7 +286,7 @@ return array(
         'wijmo.wijevcal' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery.globalize',
             'jquery.globalize.cultures', 'jquery.mousewheel', 'wijmo.widget', 'wijmo.wijtextselection', 'wijmo.wijutil',
             'wijmo.wijinputcore', 'wijmo.wijinputdate', 'wijmo.wijinputnumber', 'wijmo.wijcalendar', 'wijmo.wijdialog',
-            'wijmo.wijcombobox', 'wijmo.wijdatepager'),
+            'wijmo.wijcombobox', 'wijmo.wijdatepager', 'wijmo.wijcharex', 'wijmo.wijstringinfo'),
         'wijmo.wijexpander' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'wijmo.widget', 'wijmo.wijutil'),
         'wijmo.wijgallery' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery-ui.position',
             'wijmo.widget', 'wijmo.wijutil'),
@@ -264,17 +299,23 @@ return array(
         'wijmo.wijinputdate' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery-ui.position',
             'wijmo.widget', 'wijmo.wijtextselection', 'jquery.globalize', 'jquery.globalize.cultures',
             'jquery-ui.effects.core', 'jquery-ui.effects.blind', 'wijmo.wijpopup', 'wijmo.wijinputcore',
-            'wijmo.wijcalendar', 'jquery.mousewheel'),
+            'wijmo.wijcalendar', 'jquery.mousewheel', 'wijmo.wijinputdateformat', 'wijmo.wijcharex',
+            'wijmo.wijstringinfo'),
         'wijmo.wijinputmask' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery-ui.position',
             'wijmo.widget', 'wijmo.wijtextselection', 'jquery.globalize', 'jquery.globalize.cultures',
             'jquery-ui.effects.core', 'jquery-ui.effects.blind', 'wijmo.wijpopup', 'wijmo.wijinputcore',
-            'wijmo.wijinputmaskcore'),
-        'wijmo.wijinputmaskcore' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'wijmo.widget'),
+            'wijmo.wijinputmaskcore', 'wijmo.wijinputmaskformat', 'wijmo.wijcharex', 'wijmo.wijstringinfo'),
+        'wijmo.wijinputmaskcore' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'wijmo.widget',
+            'wijmo.wijinputcore', 'wijmo.wijstringinfo'),
+        'wijmo.wijinputmaskformat' => array('jquery', 'wijmo.wijcharex', 'wijmo.wijstringinfo', 'wijmo.wijutil'),
         'wijmo.wijinputnumber' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery-ui.position',
             'wijmo.widget', 'wijmo.wijtextselection', 'jquery.globalize', 'jquery.globalize.cultures',
-            'jquery-ui.effects.core', 'jquery-ui.effects.blind', 'wijmo.wijpopup', 'wijmo.wijinputcore'),
+            'jquery-ui.effects.core', 'jquery-ui.effects.blind', 'wijmo.wijpopup', 'wijmo.wijinputcore',
+            'wijmo.wijstringinfo', 'wijmo.wijinputnumberformat', 'wijmo.wijcharex', 'wijmo.wijstringinfo'),
         'wijmo.wijinputtext' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'wijmo.widget',
-            'wijmo.wijinputcore'),
+            'wijmo.wijinputcore', 'wijmo.wijstringinfo', 'wijmo.wijinputcore', 'wijmo.wijinputtextformat',
+            'wijmo.wijtooltip', 'wijmo.wijcharex', 'wijmo.wijstringinfo'),
+        'wijmo.wijinputtextformat' => array('wijmo.wijcharex', 'wijmo.wijutil'),
         'wijmo.wijlightbox' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery-ui.position',
             'jquery-ui.effects.core', 'jquery.cookie', 'wijmo.widget', 'wijmo.wijutil'),
         'wijmo.wijlineargauge' => array('jquery', 'jquery-ui.core', 'jquery-ui.widget', 'jquery.globalize',
@@ -329,6 +370,8 @@ return array(
         'jquery' => 'static/novius-os/admin/bundle/vendor.min',
         'jquery-migrate' => 'static/novius-os/admin/vendor/jquery/jquery-migrate-1.2.1',
 
+        'jquery.simulate' => 'static/novius-os/admin/vendor/jquery/simulate/jquery.simulate.min',
+        'jquery.taphold' => 'static/novius-os/admin/vendor/jquery/taphold/taphold.min',
         'jquery.cookie' => 'static/novius-os/admin/bundle/vendor.min',
         'jquery.globalize' => 'static/novius-os/admin/bundle/vendor.min',
         'jquery.globalize.cultures' => 'static/novius-os/admin/bundle/vendor.min',
@@ -342,6 +385,8 @@ return array(
             'static/novius-os/admin/vendor/jquery/jquery-password_strength/jquery.password_strength.min',
         'jquery.validate' => 'static/novius-os/admin/vendor/jquery/jquery-validation/jquery.validate.min',
         'jquery-ui.tag-it' => 'static/novius-os/admin/vendor/jquery/ui-tag-it/js/tag-it.min',
+        'jquery-ui.nestedSortable' =>
+            'static/novius-os/admin/vendor/jquery/ui-nestedsortable/jquery.mjs.nestedSortable.min',
 
         'jquery-ui.core' => 'static/novius-os/admin/bundle/vendor.min',
         'jquery-ui.widget' => 'static/novius-os/admin/bundle/vendor.min',
@@ -380,6 +425,14 @@ return array(
         'jquery-ui.effects.slide' => 'static/novius-os/admin/bundle/vendor.min',
         'jquery-ui.effects.transfer' => 'static/novius-os/admin/bundle/vendor.min',
 
+        'pnotify' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.nonblock' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.buttons' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.callbacks' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.confirm' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.desktop' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+        'pnotify.history' => 'static/novius-os/admin/vendor/jquery/pnotify/pnotify.custom.min',
+
         'wijmo.widget' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.data' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.data.wijdatasource' => 'static/novius-os/admin/bundle/vendor.min',
@@ -406,12 +459,18 @@ return array(
         'wijmo.wijgallery' => 'static/novius-os/admin/vendor/wijmo/js/wijgallery/jquery.wijmo.wijgallery.min',
         'wijmo.wijgauge' => 'static/novius-os/admin/vendor/wijmo/js/wijgauge/jquery.wijmo.wijgauge.min',
         'wijmo.wijgrid' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijcharex' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputcore' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputdate' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijinputdateformat' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputmask' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputmaskcore' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijinputmaskformat' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputnumber' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijinputnumberformat' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijinputtext' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijinputtextformat' => 'static/novius-os/admin/bundle/vendor.min',
+        'wijmo.wijstringinfo' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijlightbox' => 'static/novius-os/admin/bundle/vendor.min',
         'wijmo.wijlineargauge' => 'static/novius-os/admin/vendor/wijmo/js/wijneargauge/jquery.wijmo.wijneargauge.min',
         'wijmo.wijlinechart' => 'static/novius-os/admin/vendor/wijmo/js/wijlinechart/jquery.wijmo.wijlinechart.min',
@@ -444,6 +503,7 @@ return array(
         'jquery-nos-validate' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-wysiwyg' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos' => 'static/novius-os/admin/bundle/nos.min',
+        'jquery-nos-contextmenu' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-loadspinner' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-ostabs' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-preview' => 'static/novius-os/admin/bundle/nos.min',
@@ -452,10 +512,11 @@ return array(
         'jquery-nos-thumbnailsgrid' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-appdesk' => 'static/novius-os/admin/bundle/nos.min',
         'jquery-nos-datacatchers' => 'static/novius-os/admin/bundle/nos.min',
+        'jquery-nos-tray' => 'static/novius-os/admin/bundle/nos.min',
 
         'jquery-nos-context-common-fields' =>
             'static/novius-os/admin/novius-os/js/views/minified/jquery.novius-os.context-common-fields',
-        'jquery-nos-appstab' => 'static/novius-os/admin/novius-os/js/views/minified/jquery.novius-os.appstab',
+        'jquery-nos-nosdesktop' => 'static/novius-os/admin/novius-os/js/views/minified/jquery.novius-os.nosdesktop',
         'jquery-nos-publishable' => 'static/novius-os/admin/novius-os/js/views/minified/jquery.novius-os.publishable',
         'jquery-nos-layout-standard' =>
             'static/novius-os/admin/novius-os/js/views/minified/jquery.novius-os.layout-standard',
@@ -487,5 +548,7 @@ return array(
             'static/novius-os/admin/novius-os/js/inspector/minified/jquery.novius-os.inspector-plain-data',
         'jquery-nos-renderer-datetimepicker' =>
             'static/novius-os/admin/novius-os/js/renderer/minified/jquery.novius-os.renderer.datetime-picker',
+        'jquery-nos-renderer-item-picker' =>
+            'static/novius-os/admin/novius-os/js/renderer/minified/jquery.novius-os.renderer.item-picker',
     ),
 );

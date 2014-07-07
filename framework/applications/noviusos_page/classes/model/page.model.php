@@ -10,6 +10,8 @@
 
 namespace Nos\Page;
 
+use Nos\Tools_Wysiwyg;
+
 class Model_Page extends \Nos\Orm\Model
 {
     protected static $_table_name = 'nos_page';
@@ -28,9 +30,9 @@ class Model_Page extends \Nos\Orm\Model
             'null' => true,
             'convert_empty_to_null' => true,
         ),
-        'page_template' => array(
+        'page_template_variation_id' => array(
             'default' => null,
-            'data_type' => 'varchar',
+            'data_type' => 'int',
             'null' => true,
             'convert_empty_to_null' => true,
         ),
@@ -211,6 +213,13 @@ class Model_Page extends \Nos\Orm\Model
             'key_from'       => 'page_parent_id',
             'model_to'       => '\Nos\Page\Model_Page',
             'key_to'         => 'page_id',
+            'cascade_save'   => false,
+            'cascade_delete' => false,
+        ),
+        'template_variation' => array(
+            'key_from'       => 'page_template_variation_id',
+            'model_to'       => '\Nos\Template\Variation\Model_Template_Variation',
+            'key_to'         => 'tpvar_id',
             'cascade_save'   => false,
             'cascade_delete' => false,
         ),
@@ -430,7 +439,7 @@ class Model_Page extends \Nos\Orm\Model
         static::_remove_page_enhanced($this->page_id);
 
         $page = $this;
-        \Nos\Nos::parse_enhancers(
+        Tools_Wysiwyg::parseEnhancers(
             $content,
             function ($enhancer, $data_config, $tag) use ($page) {
                 $config = \Nos\Config_Data::get('enhancers.'.$enhancer, false);

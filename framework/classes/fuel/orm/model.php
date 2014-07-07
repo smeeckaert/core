@@ -16,6 +16,10 @@ class UnknownBehaviourException extends \Exception
 {
 }
 
+class InvalidProviderException extends \Exception
+{
+}
+
 use Arr;
 
 class Model extends \Orm\Model
@@ -40,6 +44,11 @@ class Model extends \Orm\Model
     protected static $_attachment = array();
 
     /**
+     * @var  array  cached providers
+     */
+    protected static $_providers_cached = array();
+
+    /**
      * @var  array  cached behaviours
      */
     protected static $_behaviours_cached = array();
@@ -51,8 +60,7 @@ class Model extends \Orm\Model
 
     protected static $_prefix = null;
 
-    public $medias;
-    public $wysiwygs;
+    protected $providers = array();
 
     /**
      * Get the class's title property
@@ -383,6 +391,135 @@ class Model extends \Orm\Model
         return static::$_behaviours_cached[$class];
     }
 
+    /**
+     * Get the class's providers and what they provide
+     *
+     * @param string $specific Provider to retrieve info of, allows direct param access by using dot notation
+     * @param mixed $default Return value when specific key wasn't found
+     * @throws UnknownProviderException
+     * @return array The specific provider if it exist and is requested or the defaut value. Else, array of all providers.
+     */
+    public static function providers($specific = null, $default = null)
+    {
+        $class = get_called_class();
+
+        if (!array_key_exists($class, static::$_providers_cached)) {
+            $providers = array();
+            $_providers = array();
+
+            if (property_exists($class, '_providers')) {
+                $_providers = static::$_providers;
+            }
+
+            if (static::canHaveLinkedWysiwygs()) {
+                $_providers['wysiwygs'] = array(
+                    'relation' => 'linked_wysiwygs',
+                    'key_property' => 'wysiwyg_key',
+                    'value_property' => 'wysiwyg_text',
+                    'table_name_property' => 'wysiwyg_join_table',
+                );
+            }
+
+            if (static::canHaveLinkedMedias()) {
+                $_providers['medias'] = array(
+                    'relation' => 'linked_medias',
+                    'key_property' => 'medil_key',
+                    'value_property' => 'medil_media_id',
+                    'value_relation' => 'media',
+                    'table_name_property' => 'medil_from_table',
+                );
+            }
+
+            $config = static::configModel();
+            if (!empty($config) && !empty($config['providers'])) {
+                $_providers = \Arr::merge($_providers, $config['providers']);
+            }
+
+            foreach ($_providers as $provider_name => $provider_v) {
+                $providers[$provider_name] = static::parseProvider($provider_name, $provider_v);
+            }
+
+            static::$_providers_cached[$class] = $providers;
+
+            static::eventStatic('buildProviders');
+        }
+
+        if ($specific) {
+            return \Arr::get(static::$_providers_cached[$class], $specific, $default);
+        }
+
+        return static::$_providers_cached[$class];
+    }
+
+    /**
+     * Add a provider to model
+     *
+     * @param string $name The provider name
+     * @param array $properties The provider properties
+     * @throws \UnknownProviderException If provider is not valid.
+     */
+    public static function addProvider($name, array $properties)
+    {
+        $properties = static::parseProvider($name, $properties);
+
+        $class = get_called_class();
+        if (array_key_exists($class, static::$_providers_cached)) {
+            static::$_providers_cached[$class] = static::providers() + array($name => $properties);
+        } elseif (property_exists($class, '_providers')) {
+            static::$_providers = static::$_providers + array($name => $properties);
+        } else {
+            static::$_providers = array($name => $properties);
+        }
+    }
+
+    protected static function parseProvider($name, array $properties)
+    {
+        if (empty($properties['relation'])) {
+            throw new InvalidProviderException('The provider '.$name.' have no relation');
+        }
+        $relation = static::relations($properties['relation'], false);
+        if (!$relation) {
+            throw new InvalidProviderException(
+                'The relation '.$properties['relation'].' of provider '.$name.' does not exist'
+            );
+        }
+        if ($relation->singular) {
+            throw new InvalidProviderException(
+                'The relation '.$properties['relation'].' of provider '.$name.' is not a multiple relation'
+            );
+        }
+        if (!$relation->cascade_save) {
+            throw new InvalidProviderException(
+                'The relation '.$properties['relation'].' of provider '.$name.' must use cascade save'
+            );
+        }
+        if (!empty($properties['value_relation'])) {
+            $model_to = $relation->model_to;
+            $relation = $model_to::relations($properties['value_relation'], false);
+            if (!$relation) {
+                throw new InvalidProviderException(
+                    'The value relation '.$properties['value_relation'].' of provider '.$name.' does not exist'
+                );
+            }
+            if (!$relation->singular) {
+                throw new InvalidProviderException(
+                    'The value relation '.$properties['value_relation'].' of provider '.
+                    $name.' is not a singular relation'
+                );
+            }
+        }
+
+        $properties['name'] = $name;
+        if (empty($properties['value_property'])) {
+            $properties['value_property'] = 'value';
+        }
+        if (empty($properties['key_property'])) {
+            $properties['key_property'] = 'key';
+        }
+
+        return $properties;
+    }
+
     protected static $_configs = array();
 
     /**
@@ -503,29 +640,22 @@ class Model extends \Orm\Model
     }
 
     /**
-     * Remove empty wysiwyg and medias
+     * Remove empty providers
      */
     public function _event_before_save()
     {
         $class = get_called_class();
-        if (static::canHaveLinkedWysiwygs()) {
-            $w_keys = array_keys($this->linked_wysiwygs);
-            foreach ($w_keys as $i) {
-                // Remove empty wysiwyg
-                if (empty($this->linked_wysiwygs[$i]->wysiwyg_text)) {
-                    $this->linked_wysiwygs[$i]->delete();
-                    unset($this->linked_wysiwygs[$i]);
-                }
-            }
-        }
 
-        if (static::canHaveLinkedMedias()) {
-            $w_keys = array_keys($this->linked_medias);
-            foreach ($w_keys as $i) {
-                // Remove empty medias
-                if (empty($this->linked_medias[$i]->medil_media_id)) {
-                    $this->linked_medias[$i]->delete();
-                    unset($this->linked_medias[$i]);
+        foreach ($this->providers() as $provider) {
+            $relation = $this->relations($provider['relation']);
+            if (isset($this->_data_relations[$relation->name])) {
+                $w_keys = array_keys($this->{$relation->name});
+                foreach ($w_keys as $i) {
+                    // Remove empty
+                    if (empty($this->{$relation->name}[$i]->{$provider['value_property']})) {
+                        $this->{$relation->name}[$i]->delete();
+                        unset($this->{$relation->name}[$i]);
+                    }
                 }
             }
         }
@@ -666,68 +796,38 @@ class Model extends \Orm\Model
 
         if (count($arr_name) > 1) {
             $class = get_called_class();
-            if (static::canHaveLinkedWysiwygs() && $arr_name[0] == 'wysiwygs') {
+            if ($provider = static::providers($arr_name[0])) {
                 $key = $arr_name[1];
-                $linked_wysiwygs = $this->getLinkedWysiwygs();
-                foreach ($linked_wysiwygs as $linked_wysiwyg) {
-                    if ($linked_wysiwyg->wysiwyg_key == $key) {
+                $relation = $this->relations($provider['relation']);
+                foreach ($this->get($relation->name) as $linked_item) {
+                    if ($linked_item->get($provider['key_property']) == $key) {
                         array_splice($arr_name, 0, 2);
                         if (empty($arr_name)) {
-                            return $linked_wysiwyg;
+                            return $linked_item;
                         }
 
-                        return $linked_wysiwyg->{implode('->', $arr_name)} = $value;
+                        return $linked_item->set(implode('->', $arr_name), $value);
                     }
                 }
 
                 // Create a new relation if it doesn't exist yet
                 if (!empty($value)) {
-                    $added = false;
-                    $this->event('addLinkedWysiwyg', array(&$added, $key, $value));
-
-                    if (!$added) {
-                        $wysiwyg = new \Nos\Model_Wysiwyg();
-                        $wysiwyg->wysiwyg_text = $value;
-                        $wysiwyg->wysiwyg_join_table = static::$_table_name;
-                        $wysiwyg->wysiwyg_key = $key;
-                        $wysiwyg->wysiwyg_foreign_id = $this->id;
-                        // Don't save the link here, it's done with cascade_save = true
-                        //$wysiwyg->save();
-                        $this->linked_wysiwygs[] = $wysiwyg;
+                    $model = $relation->model_to;
+                    $item = new $model();
+                    $item->set($provider['value_property'], $value);
+                    $item->set($provider['key_property'], $key);
+                    if (!empty($provider['table_name_property'])) {
+                        $item->set($provider['table_name_property'], static::$_table_name);
                     }
-                }
-
-                return $this;
-            }
-
-            if (static::canHaveLinkedMedias() && $arr_name[0] == 'medias') {
-                $key = $arr_name[1];
-                $linked_medias = $this->getLinkedMedias();
-                foreach ($linked_medias as $linked_media) {
-                    if ($linked_media->medil_key == $key) {
-                        array_splice($arr_name, 0, 2);
-                        if (empty($arr_name)) {
-                            return $linked_media;
-                        }
-
-                        return $linked_media->{implode('->', $arr_name)} = $value;
+                    $key_to = $relation->key_to;
+                    reset($key_to);
+                    foreach ($relation->key_from as $pk) {
+                        $item->{current($key_to)} = $this->{$pk};
+                        next($key_to);
                     }
-                }
-
-                // Create a new relation if it doesn't exist yet
-                if (!empty($value)) {
-                    $added = false;
-                    $this->event('addLinkedMedia', array(&$added, $key, $value));
-
-                    if (!$added) {
-                        $medil = new \Nos\Media\Model_Link();
-                        $medil->medil_from_table = static::$_table_name;
-                        $medil->medil_key = $key;
-                        $medil->medil_foreign_id = $this->id;
-                        $medil->medil_media_id = $value;
-                        // Don't save the link here, it's done with cascade_save = true
-                        $this->linked_medias[] = $medil;
-                    }
+                    // Don't save the link here, it's done with cascade_save = true
+                    //$wysiwyg->save();
+                    $this->{$relation->name}[] = $item;
                 }
 
                 return $this;
@@ -789,12 +889,22 @@ class Model extends \Orm\Model
                 try {
                     return parent::get($property);
                 } catch (\OutOfBoundsException $e) {
+                    if ($provider = static::providers($property)) {
+                        return $this->providers[$provider];
+                    }
                     static::properties(true);
                 }
             }
         }
 
-        return parent::get($property, $conditions);
+        try {
+            return parent::get($property, $conditions);
+        } catch (\OutOfBoundsException $e) {
+            if (static::providers($property)) {
+                return $this->providers[$property];
+            }
+            throw $e;
+        }
     }
 
     public function & __get($name)
@@ -802,34 +912,18 @@ class Model extends \Orm\Model
         $arr_name = explode('->', $name);
         if (count($arr_name) > 1) {
             $class = get_called_class();
-            if (static::canHaveLinkedWysiwygs() && $arr_name[0] == 'wysiwygs') {
+
+            if ($provider = static::providers($arr_name[0])) {
                 $key = $arr_name[1];
-                $linked_wysiwygs = $this->getLinkedWysiwygs();
-                foreach ($linked_wysiwygs as $linked_wysiwyg) {
-                    if ($linked_wysiwyg->wysiwyg_key == $key) {
+                $relation = $this->relations($provider['relation']);
+                foreach ($this->get($relation->name) as $linked_item) {
+                    if ($linked_item->get($provider['key_property']) == $key) {
                         array_splice($arr_name, 0, 2);
                         if (empty($arr_name)) {
-                            return $linked_wysiwyg;
+                            return $linked_item;
                         }
 
-                        return $linked_wysiwyg->__get(implode('->', $arr_name));
-                    }
-                }
-                $ref = null;
-                return $ref;
-            }
-
-            if (static::canHaveLinkedMedias() && $arr_name[0] == 'medias') {
-                $key = $arr_name[1];
-                $linked_medias = $this->getLinkedMedias();
-                foreach ($linked_medias as $linked_media) {
-                    if ($linked_media->medil_key == $key) {
-                        array_splice($arr_name, 0, 2);
-                        if (empty($arr_name)) {
-                            return $linked_media;
-                        }
-
-                        return $linked_media->__get(implode('->', $arr_name));
+                        return $linked_item->__get(implode('->', $arr_name));
                     }
                 }
                 $ref = null;
@@ -847,32 +941,6 @@ class Model extends \Orm\Model
         }
 
         return parent::__get($name);
-    }
-
-    /**
-     * @return array Array of wysiwyg model, linked with current model
-     * @see \Nos\Model_Wysiwyg
-     */
-    public function getLinkedWysiwygs()
-    {
-        $linked_wysiwygs = $this->linked_wysiwygs;
-
-        $this->event('getLinkedWysiwygs', array(&$linked_wysiwygs));
-
-        return $linked_wysiwygs;
-    }
-
-    /**
-     * @return array Array of media link model, linked with current model
-     * @see \Nos\Media\Model_Link
-     */
-    public function getLinkedMedias()
-    {
-        $linked_medias = $this->linked_medias;
-
-        $this->event('getLinkedMedias', array(&$linked_medias));
-
-        return $linked_medias;
     }
 
     public function __toString()
@@ -946,33 +1014,32 @@ class Model extends \Orm\Model
     public function __clone()
     {
         parent::__clone();
-        $wysiwygs = array();
-        $medias = array();
-        // Don't copy empty wysiwygs and medias
-        foreach ($this->wysiwygs as $key => $wysiwyg) {
-            if (!empty($wysiwyg)) {
-                $wysiwygs[$key] = $wysiwyg;
-            }
-        }
-        foreach ($this->medias as $key => $media) {
-            if (!empty($media)) {
-                $medias[$key] = $media;
+        $providers = array();
+
+        foreach ($this->providers() as $name => $provider) {
+            $providers[$name] = array();
+            foreach ($this->{$name} as $key => $item) {
+                if (!empty($item)) {
+                    $providers[$name][$key] = $item;
+                }
             }
         }
         $this->initProviders();
-        foreach ($wysiwygs as $key => $wysiwyg) {
-            $this->wysiwygs->{$key} = $wysiwyg;
+
+        foreach ($providers as $name => $provider) {
+            foreach ($provider as $key => $item) {
+                $this->{$name}->{$key} = $item;
+            }
         }
-        foreach ($medias as $key => $media) {
-            $this->medias->{$key} = $media;
-        }
+
         $this->event('afterClone');
     }
 
     protected function initProviders()
     {
-        $this->medias = new Model_Media_Provider($this);
-        $this->wysiwygs = new Model_Wysiwyg_Provider($this);
+        foreach ($this->providers() as $name => $provider) {
+            $this->providers[$name] = new Model_Provider($this, $provider);
+        }
     }
 
     public function __sleep()
@@ -986,55 +1053,72 @@ class Model extends \Orm\Model
     }
 }
 
-
-class Model_Media_Provider implements \Iterator
+class Model_Provider implements \Iterator
 {
     protected $parent;
+    protected $provider;
     protected $iterator = array();
 
-    public function __construct($parent)
+    public function __construct($parent, $provider)
     {
         $this->parent = $parent;
+        $this->provider = $provider;
     }
 
     public function & __get($value)
     {
-        // Reuse the getter and fetch the media directly
-        $media = $this->parent->{'medias->'.$value};
-        if ($media === null) {
+        // Reuse the getter and fetch the provider directly
+        $item = $this->parent->{$this->provider['name'].'->'.$value};
+        if ($item === null) {
             // Don't return null, we need a reference here
-            return $media;
+            return $item;
         }
 
-        return $media->get('media');
+        if (!empty($this->provider['value_relation'])) {
+            return $item->get($this->provider['value_relation']);
+        }
+        return $item->get($this->provider['value_property']);
     }
 
     public function __set($property, $value)
     {
-        $media_id = (string) ($value instanceof \Nos\Media\Model_Media ? $value->media_id : $value);
+        $relation = $this->parent->relations($this->provider['relation']);
+        $model_to = $relation->model_to;
 
-        // Check existence of the media, the ORM will throw an exception anyway upon save if it doesn't exists
-        if (!empty($media_id)) {
-            $media = \Nos\Media\Model_Media::find($media_id);
-            if (is_null($media)) {
-                $pk = $this->parent->primary_key();
-                throw new \Exception("The media with ID $media_id doesn't exists, cannot assign it as \"$property\" for ".\Inflector::denamespace(
-                    get_class($this->parent)
-                )."(".$this->parent->{$pk[0]}.")");
+        if (!empty($this->provider['value_relation'])) {
+            $value_relation = $model_to::relations($this->provider['value_relation']);
+            $value_model_to = $value_relation->model_to;
+
+            $value = (string) ($value instanceof $value_model_to ? $value->{$value_relation->key_to[0]} : $value);
+
+            // Check existence of the item, the ORM will throw an exception anyway upon save if it doesn't exists
+            if (!empty($value)) {
+                $item = $value_model_to::find($value);
+                if (is_null($item)) {
+                    $pk = $this->parent->primary_key();
+                    throw new \Exception(
+                        'The '.$this->provider['name'].' with ID '.$value.' doesn\'t exists, cannot assign it as "'.
+                        $property.'" for '.\Inflector::denamespace(
+                            get_class($this->parent)
+                        ).'('.$this->parent->{$pk[0]}.')'
+                    );
+                }
             }
+        } else {
+            $value = (string) ($value instanceof $model_to ? $value->{$this->provider['value_property']} : $value);
         }
 
         // Reuse the getter
-        $media_link = $this->parent->{'medias->'.$property};
+        $item_link = $this->parent->{$this->provider['name'].'->'.$property};
 
         // Create the new relation if it doesn't exists yet
-        if (is_null($media_link)) {
-            $this->parent->{'medias->'.$property} = $media_id;
+        if (is_null($item_link)) {
+            $this->parent->{$this->provider['name'].'->'.$property} = $value;
             return;
         }
 
         // Update an existing relation
-        $media_link->medil_media_id = $media_id;
+        $item_link->set($this->provider['value_property'], $value);
 
         // Don't save the link here, it's done with cascade_save = true
     }
@@ -1053,9 +1137,9 @@ class Model_Media_Provider implements \Iterator
     public function rewind()
     {
         $keys = array();
-        foreach ($this->parent->getLinkedMedias() as $media) {
-            if ($this->__get($media->medil_key) !== null) {
-                $keys[] = $media->medil_key;
+        foreach ($this->parent->{$this->provider['relation']} as $item) {
+            if ($this->__get($item->{$this->provider['key_property']}) !== null) {
+                $keys[] = $item->{$this->provider['key_property']};
             }
         }
         $this->iterator = $keys;
@@ -1085,90 +1169,5 @@ class Model_Media_Provider implements \Iterator
     public function setParent($obj)
     {
         $this->parent = $obj;
-    }
-}
-
-
-class Model_Wysiwyg_Provider implements \Iterator
-{
-    protected $parent;
-    protected $iterator = array();
-
-    public function __construct($parent)
-    {
-        $this->parent = $parent;
-    }
-
-    public function & __get($value)
-    {
-        $wysiwyg = $this->parent->{'wysiwygs->'.$value};
-        if ($wysiwyg === null) {
-            // Don't return null, we need a reference here
-            return $wysiwyg;
-        }
-
-        return $wysiwyg->get('wysiwyg_text');
-    }
-
-    public function __set($property, $value)
-    {
-        $value = (string) ($value instanceof \Nos\Model_Wysiwyg ? $value->wysiwyg_text : $value);
-
-        // Reuse the getter
-        $wysiwyg = $this->parent->{'wysiwygs->'.$property};
-
-        // Create the new relation if it doesn't exists yet
-        if (is_null($wysiwyg)) {
-            $this->parent->{'wysiwygs->'.$property} = $value;
-            return;
-        }
-
-        // Update an existing relation
-        $wysiwyg->wysiwyg_text = $value;
-
-        // Don't save the link here, it's done with cascade_save = true
-    }
-
-    public function __isset($value)
-    {
-        $value = $this->__get($value);
-        return (!empty($value));
-    }
-
-    public function __unset($name)
-    {
-        $this->__set($name, null);
-    }
-
-    public function rewind()
-    {
-        $keys = array();
-        foreach ($this->parent->getLinkedWysiwygs() as $wysiwyg) {
-            if ($this->__get($wysiwyg->wysiwyg_key) !== null) {
-                $keys[] = $wysiwyg->wysiwyg_key;
-            }
-        }
-        $this->iterator = $keys;
-        reset($keys);
-    }
-
-    public function current()
-    {
-        return $this->__get(current($this->iterator));
-    }
-
-    public function key()
-    {
-        return current($this->iterator);
-    }
-
-    public function next()
-    {
-        next($this->iterator);
-    }
-
-    public function valid()
-    {
-        return false !== current($this->iterator);
     }
 }
