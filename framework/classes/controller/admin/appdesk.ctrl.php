@@ -83,11 +83,6 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
             }
         }
 
-        $selectedContexts = (array) \Input::get('selectedContexts', array());
-        if (!empty($selectedContexts)) {
-            $this->config['selectedContexts'] = $selectedContexts;
-        }
-
         if (empty($this->config['custom'])) {
             $this->config['custom'] = array(
                 'from' => 'default',
@@ -99,6 +94,12 @@ class Controller_Admin_Appdesk extends Controller_Admin_Application
         $contexts = \Nos\User\Permission::contexts();
         $locales = \Nos\User\Permission::locales();
         $sites = \Nos\User\Permission::sites();
+
+        $selectedContexts = (array) \Input::get('selectedContexts', array());
+        if (!empty($selectedContexts)) {
+            $authorizedSelectedContexts = array_intersect($selectedContexts, array_keys($contexts));
+            $this->config['selectedContexts'] = $authorizedSelectedContexts;
+        }
 
         foreach ($contexts as $context => $params) {
             $site = Tools_Context::siteCode($context);
