@@ -50,7 +50,7 @@ if ($is_media) {
 
     $media = false;
     $res = \DB::select()->from(\Nos\Media\Model_Media::table())->where(array(
-        array('media_path', '=', '/'.$media_url),
+        array('media_path', '=', '/'.parse_url($media_url, PHP_URL_PATH)),
     ))->execute()->as_array();
 
     if (!empty($res)) {
@@ -157,7 +157,7 @@ if ($is_attachment) {
 
     $send_file = false;
     $check = false;
-    $match = preg_match('`(.+/)([^/]+)/([^/]+).([a-z]+)$`Uu', $attachment_url, $m);
+    $match = preg_match('`(.+/)([^/]+)/([^/]+).([a-z]+)$`iUu', $attachment_url, $m);
     if ($match) {
         list(, $alias, $attached, $filename, $extension) = $m;
 
